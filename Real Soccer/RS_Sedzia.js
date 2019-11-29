@@ -1,4 +1,4 @@
-// (Tu miał być kredyt, ale wiadomo, kto to pierwszy napisał, znalezione na pastebinie)
+// (Tu miał być kredyt, ale nie wiadomo, kto to pierwszy napisał, znalezione na pastebinie)
 /***************************************************************************************************************************************************************************
 
 Aby uzyskać uprawnienia administratora należy (domyślnie) wpisać !opqwerty. Zalecana jest zmiana nazwy tej komendy (linijka 516)
