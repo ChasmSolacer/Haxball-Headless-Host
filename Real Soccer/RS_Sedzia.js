@@ -1,7 +1,6 @@
-// (Tu miał być kredyt, ale wiadomo, kto to pierwszy napisał, znalezione na pastebinie)
 /***************************************************************************************************************************************************************************
 
-Aby uzyskać uprawnienia administratora należy (domyślnie) wpisać !opqwerty. Zalecana jest zmiana nazwy tej komendy (linijka 516)
+Aby uzyskać uprawnienia administratora należy (domyślnie) wpisać !opqwerty. Zalecana jest zmiana nazwy tej komendy (linijka 520)
 
 PRZYDATNE KOMENDY DLA ADMINÓW:
 
@@ -71,6 +70,8 @@ let timeOutside = 0;
 let playTimeInMinutes = 20; // Przy limicie czasu 0, mecz domyślnie trwa 20 minut
 let isTimeAddedShown = false;
 let actualTimeAdded;
+let redPossessionTicks = 0;
+let bluePossessionTicks = 0;
 
 // Mapy
 let maps = 
@@ -512,6 +513,9 @@ function hasBallLeftTheLine() // ???
 */
 let commands =
 {
+    // Proste
+	'!poss': possFun,
+	
     // Gracz
     '!opqwerty': adminFun, // KOMENDA DO UZYSKANIA ADMINA
 	'!deop': unAdminFun,
@@ -527,6 +531,19 @@ let commands =
 	'!tblue': teamBlueNameFun,
 	'!l': loadFun,
 	'!load': loadFun
+}
+
+// Proste
+function possFun()
+{
+	if (redPossessionTicks + bluePossessionTicks == 0) // Trzeba pamiętać o dziedzinie
+		return false;
+	let redPossessionPercentage = Math.round(redPossessionTicks / (redPossessionTicks+bluePossessionTicks) * 100);
+	let bluePossessionPercentage = 100 - redPossessionPercentage;
+	if (room.getScores() != null) // mecz trwa
+		room.sendAnnouncement('Posiadanie piłki: ' + redTeamName + ' ' + redPossessionPercentage + ' % ' + bluePossessionPercentage + ' ' + blueTeamName, null, 0xCCFF00, 'normal', 1);
+	else
+		room.sendAnnouncement('Posiadanie piłki w ostatnim meczu: ' + redTeamName + ' ' + redPossessionPercentage + ' % ' + bluePossessionPercentage + ' ' + blueTeamName, null, 0xCCFF00, 'normal', 1);
 }
 
 // Gracz
@@ -627,6 +644,13 @@ room.onGameTick = function()
     hasBallLeftTheLine();
     addedTime();
     displayAddedTime();
+	
+	// Posiadanie piłki - okresy
+	if (lastTeamTouched == Team.RED)
+		redPossessionTicks++;
+	else if (lastTeamTouched == Team.BLUE)
+		bluePossessionTicks++;
+
     tickCount++;
 }
 
@@ -692,6 +716,8 @@ room.onGameStart = function(byPlayer)
     timeOutside = 0;
     isTimeAddedShown = false;
     lineBallPosition = 0;
+	redPossessionTicks = 0;
+	bluePossessionTicks = 0;
 }
 
 room.onGameStop = function(byPlayer)
