@@ -711,6 +711,7 @@ room.onGameStart = function(byPlayer)
 		console.log('Gra rozpoczęta przez: ' + byPlayer.name + '#' + byPlayer.id);
 	
 	ballRadius = room.getDiscProperties(0).radius;
+	lastTeamTouched = 0;
 	lineCrossedPlayers = [{name: 'temp', times: 0}];
     lastScores = room.getScores().red + room.getScores().blue;
     timeOutside = 0;
