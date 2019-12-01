@@ -363,10 +363,10 @@ function getPlayersNotWithinLine() // onPlayerBallKick
 	}
 }
 
-function checkPlayersLine()
+function checkPlayersLine() // isThrowInCorrect
 {
-    console.log('2');
-    for(let i = 0; i < playersNotInLine.length; i++)
+    console.log('checkPlayersLine');
+    for (let i = 0; i < playersNotInLine.length; i++)
     {
 		let found = false;
 		for (let j = 0; j < lineCrossedPlayers.length; j++)
@@ -449,7 +449,7 @@ function isBackRequired()
     }
 }
 
-function isThrowInCorrect()
+function isThrowInCorrect() // onGameTick
 {
     let ballPosition = room.getBallPosition();
     let boolCrossing = isBallCrossingTheLine();
@@ -711,6 +711,7 @@ room.onGameStart = function(byPlayer)
 		console.log('Gra rozpoczęta przez: ' + byPlayer.name + '#' + byPlayer.id);
 	
 	ballRadius = room.getDiscProperties(0).radius;
+    triggerDistance = ballRadius + 15 + 0.01;
 	lastTeamTouched = 0;
 	lineCrossedPlayers = [{name: 'temp', times: 0}];
     lastScores = room.getScores().red + room.getScores().blue;
@@ -813,6 +814,7 @@ room.onTeamGoal = function(team)
 room.onPositionsReset = function()
 {
 	ballRadius = room.getDiscProperties(0).radius;
+    triggerDistance = ballRadius + 15 + 0.01;
 }
 
 room.onTeamVictory = function(scores)
