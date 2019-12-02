@@ -28,8 +28,13 @@ let lon = 19;
 let stadiumWidth = 1150;
 let stadiumHeight = 600;
 let ballRadius = 9.8;
-let throwInLeeway = 350;
-let greenLine = 510;
+let throwInLeeway = 350; // dozwolone odchylenie w poziomie przy wyrzucie z autu
+let greenLine = 510; // punkt, w którym gracz jest styczny z linią boczną
+let cornerPenaltyRadius = 330; // najmniejsza odległość od gracza do rogu, w której gracz nie przekracza łuku
+let cornerLeftUpPos = {x: -1150, y: -600};
+let cornerLeftDownPos = {x: -1150, y: 600};
+let cornerRightUpPos = {x: 1150, y: -600};
+let cornerRightDownPos = {x: 1150, y: 600};
 
 /* USTAWIENIA */
 let triggerDistance = ballRadius + 15 + 0.01;
@@ -61,7 +66,7 @@ let lastPlayerTouched = null;
 let previousPlayerTouched = null;
 let assistingPlayer = null;
 let backMSG = false;
-let lastCall;
+let lastCall; // 1, 2, CK, GK
 let isBallUp = false;
 let crossed = false;
 let lineCrossedPlayers = [{name: 'temp', times: 0}];
@@ -306,11 +311,11 @@ function checkBallPosition() // onGameTick
     return true;
 }
 
-function getDistanceBetweenPoints(p1, p2)
+function getDistanceBetweenPoints(point1, point2)
 {
-    let d1 = p1.x - p2.x;
-    let d2 = p1.y - p2.y;
-    return Math.sqrt(d1 * d1 + d2 * d2);
+    let distance1 = point1.x - point2.x;
+    let distance2 = point1.y - point2.y;
+    return Math.sqrt(distance1 * distance1 + distance2 * distance2);
 }
 
 function isTouchingBall(player)
@@ -350,22 +355,25 @@ function getPlayersNotWithinLine() // onPlayerBallKick
     console.log('getPlayersNotWithinLine');
     playersNotInLine = new Array; // tablica graczy przekraczających linię
 	for (let i = 0; i < population; i++)
-	{
+	{ // dla każdego gracza
 		if (players[i].position != null)
-		{
-			if (players[i].team != lastTeamTouched && players[i].team != lastCall && lastCall != 'CK' && lastCall != 'GK')
-			{ // jeżeli drużyna przeciwna dotknęła ostatnia i ostatni komunikat to aut dla przeciwnika
-				if ((players[i].position.y > greenLine || players[i].position.y < -greenLine) && getDistanceBetweenPoints(room.getBallPosition(), players[i].position) < 500)
-					// jeżeli gracz przekracza linię i jest bliżej niż 500 od piłki
-					playersNotInLine.push(players[i].name); // wpis do tablicy
+		{ // jeżeli gracz jest w grze
+			if (players[i].team != lastTeamTouched)
+			{ // jeżeli drużyna przeciwna dotknęła ostatnia
+				if (lastCall != players[i].team && lastCall != 'CK' && lastCall != 'GK')
+				{ // jeżeli ostatni komunikat to aut dla przeciwnika
+					if ((players[i].position.y > greenLine || players[i].position.y < -greenLine) && getDistanceBetweenPoints(room.getBallPosition(), players[i].position) < 500)
+						// jeżeli gracz przekracza linię boczną i jest bliżej niż 500 od piłki
+						playersNotInLine.push(players[i].name); // wpis do tablicy
+				}
 			}
 		}
 	}
 }
 
-function checkPlayersLine() // isThrowInCorrect
-{
-    console.log('checkPlayersLine');
+function printPlayersLine() // isThrowInCorrect
+{ // wypisywanie przekraczających
+    console.log('printPlayersLine');
     for (let i = 0; i < playersNotInLine.length; i++)
     {
 		let found = false;
@@ -452,10 +460,10 @@ function isBackRequired()
 function isThrowInCorrect() // onGameTick
 {
     let ballPosition = room.getBallPosition();
-    let boolCrossing = isBallCrossingTheLine();
+    let isCrossing = isBallCrossingTheLine();
     let LTTstring = lastTeamTouched.toString();
 
-    if (boolCrossing && !isBallKickedOutside && LTTstring==lastCall && (lastCall=='1' || lastCall=='2'))
+    if (isCrossing && !isBallKickedOutside && LTTstring==lastCall && (lastCall=='1' || lastCall=='2'))
     {
 
         if (lastCall=='2')
@@ -469,21 +477,21 @@ function isThrowInCorrect() // onGameTick
 
         isBallKickedOutside == false;
     }
-	else if (boolCrossing && LTTstring != lastCall && (lastCall=='1' || lastCall=='2'))
+	else if (isCrossing && LTTstring != lastCall && (lastCall=='1' || lastCall=='2'))
     {
         room.sendAnnouncement('NIE TA DRUŻYNA', null, 0xFFFF00, 'normal', 1);
         wrongThrowPosition = false;
         trigger = false;
     }
-	else if (boolCrossing && wrongThrowPosition && LTTstring==lastCall && (lastCall=='1' || lastCall=='2'))
+	else if (isCrossing && wrongThrowPosition && LTTstring==lastCall && (lastCall=='1' || lastCall=='2'))
     {
         room.sendAnnouncement('NIE W TYM MIEJSCU', null, 0xFFFF00, 'normal', 1);
         wrongThrowPosition = false;
         trigger = false;
     }
-	else if (boolCrossing)
+	else if (isCrossing)
     {
-        checkPlayersLine();
+        printPlayersLine();
     }
 }
 
