@@ -54,9 +54,9 @@ let bijacze = new Map(); // kto i ile razy banował innych graczy (niewykorzysty
 
 let lastScores = 0;
 let lastTeamTouched = 0;
-let lineBallPosition;
+let ballYPosition;
 let exitingPos = null;
-let previousBallPos;
+let previousBallYPosition;
 let lastPlayerTouched = null;
 let previousPlayerTouched = null;
 let assistingPlayer = null;
@@ -185,15 +185,15 @@ function displayAddedTime() // onGameTick
 			actualTimeAdded = Math.round(timeOutside/60 / 2); // 20/2=10s
 			if (actualTimeAdded < 60 && actualTimeAdded > -1)
 			{
-				room.sendAnnouncement('+00:' + leadingZero(actualTimeAdded), null, 0x88FF88, 'bold', 1);
+				room.sendAnnouncement('+00:' + leadingZero(actualTimeAdded), null, 0x88FFAA, 'bold', 1);
 			}
 			else if (actualTimeAdded < 0)
 			{
-				room.sendAnnouncement('+00:00', null, 0x88FF88, 'normal', 1);
+				room.sendAnnouncement('+00:00', null, 0x88FFAA, 'normal', 1);
 			}
 			else
 			{
-				room.sendAnnouncement('+01:00', null, 0x88FF88, 'bold', 1);
+				room.sendAnnouncement('+01:00', null, 0x88FFAA, 'bold', 1);
 			}
 			isTimeAddedShown = true; // już pokazano
 		}
@@ -262,8 +262,8 @@ function checkBallPosition() // onGameTick
             isBallOutsideStadium = true;
             exitingPos = ballPosition.x;
             let totalScores = room.getScores().red + room.getScores().blue;
-            if(lastScores != totalScores)
-			{
+            if (lastScores != totalScores)
+			{ // jeżeli padła bramka, to nic nie wyświetlamy
                 lastScores = totalScores;
                 return false;
             }
@@ -374,7 +374,7 @@ function checkPlayersLine() // isThrowInCorrect
 			if (lineCrossedPlayers[j].name == playersNotInLine[i])
 			{
 				lineCrossedPlayers[j].times = lineCrossedPlayers[j].times + 1;
-				room.sendAnnouncement('LINIA - ' + lineCrossedPlayers[j].name + ' {' + lineCrossedPlayers[j].times + '}', null, 0xFFFF00, 'normal', 1);
+				room.sendAnnouncement('LINIA - ' + lineCrossedPlayers[j].name + ' {' + lineCrossedPlayers[j].times + '}', null, 0xFFCC00, 'normal', 1);
 				found = true;
 			}
 		}
@@ -386,7 +386,7 @@ function checkPlayersLine() // isThrowInCorrect
 				times: 1,
 				punished: false
 			});
-			room.sendAnnouncement('LINIA - ' + playersNotInLine[i] + ' {1}', null, 0xFFFF00, 'normal', 1);
+			room.sendAnnouncement('LINIA - ' + playersNotInLine[i] + ' {1}', null, 0xFFCC00, 'normal', 1);
 		}
     }
 }
@@ -471,7 +471,7 @@ function isThrowInCorrect() // onGameTick
     }
 	else if (boolCrossing && LTTstring != lastCall && (lastCall=='1' || lastCall=='2'))
     {
-        //room.sendAnnouncement('ZŁA DRUŻYNA', null, 0xFFFF00, 'normal', 1);
+        room.sendAnnouncement('NIE TA DRUŻYNA', null, 0xFFFF00, 'normal', 1);
         wrongThrowPosition = false;
         trigger = false;
     }
@@ -488,17 +488,17 @@ function isThrowInCorrect() // onGameTick
 }
 
 function isBallCrossingTheLine()
-{
-    previousBallPos = lineBallPosition;
-    lineBallPosition = room.getBallPosition().y;
-    crossed = (lineBallPosition < stadiumHeight && previousBallPos > stadiumHeight) || (lineBallPosition > -stadiumHeight && previousBallPos < -stadiumHeight);
-    return (lineBallPosition<stadiumHeight && previousBallPos>stadiumHeight) || (lineBallPosition>-stadiumHeight && previousBallPos<-stadiumHeight);
+{ // sprawdza, czy piłka przekracza linię boczną
+    previousBallYPosition = ballYPosition;
+    ballYPosition = room.getBallPosition().y;
+    crossed = (ballYPosition < stadiumHeight && previousBallYPosition > stadiumHeight) || (ballYPosition > -stadiumHeight && previousBallYPosition < -stadiumHeight);
+    return crossed;
 }
 
 function hasBallLeftTheLine() // ???
 {
     let ballPosition = room.getBallPosition();
-    if (ballPosition.y<outLineY && isBallKickedOutside)
+    if (ballPosition.y < outLineY && isBallKickedOutside)
     {
     }
 	else if (ballPosition.y > outLineY && isBallKickedOutside && lastPlayerTouched.id == previousPlayerTouched.id)
@@ -717,7 +717,7 @@ room.onGameStart = function(byPlayer)
     lastScores = room.getScores().red + room.getScores().blue;
     timeOutside = 0;
     isTimeAddedShown = false;
-    lineBallPosition = 0;
+    ballYPosition = 0;
 	redPossessionTicks = 0;
 	bluePossessionTicks = 0;
 }
