@@ -1,6 +1,6 @@
 /***************************************************************************************************************************************************************************
 
-Aby uzyskać uprawnienia administratora należy (domyślnie) wpisać !opqwerty. Zalecana jest zmiana nazwy tej komendy (linijka 520)
+Aby uzyskać uprawnienia administratora należy (domyślnie) wpisać !opqwerty. Zalecana jest zmiana nazwy tej komendy (linijka 528)
 
 PRZYDATNE KOMENDY DLA ADMINÓW:
 
