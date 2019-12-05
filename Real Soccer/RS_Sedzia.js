@@ -563,7 +563,8 @@ let commands =
 	'!tred': teamRedNameFun,
 	'!tblue': teamBlueNameFun,
 	'!l': loadFun,
-	'!load': loadFun
+	'!load': loadFun,
+	'!e': eFun
 }
 
 // Proste
@@ -656,6 +657,17 @@ function loadFun(player, arg)
 	}
 	else
 		room.sendAnnouncement('[PRYWATNA] ⛔Nie. Nie wiemy, czy można ci ufać.', player.id, 0xFFCC00, 'normal', 1);
+}
+
+function eFun(player, arg)
+{ // !e
+	if (player.admin === true)
+	{
+		room.sendAnnouncement(player.name + ': ' + arg, null, 0xCC55FF, 'bold', 2);
+	}
+	else
+		room.sendAnnouncement('[PRYWATNA] Cicho e', player.id, 0xFFCC00, 'normal', 1);
+	return false;
 }
 
 /*
