@@ -581,7 +581,7 @@ function possFun()
 
 function pauseFun()
 { // !p
-	if (paused)
+	if (isPaused)
 		room.pauseGame(false); // wznowienie gry
 	else
 		room.pauseGame(true); // wstrzymanie gry
