@@ -1,6 +1,6 @@
 /***************************************************************************************************************************************************************************
 
-Aby uzyskać uprawnienia administratora należy (domyślnie) wpisać !opqwerty. Zalecana jest zmiana nazwy tej komendy (linijka 553)
+Aby uzyskać uprawnienia administratora należy (domyślnie) wpisać !opqwerty. Zalecana jest zmiana nazwy tej komendy (linijka 552)
 
 PRZYDATNE KOMENDY DLA ADMINÓW:
 
@@ -547,12 +547,12 @@ let commands =
 {
     // Proste
 	'!poss': possFun,
-	'!p': pauseFun,
 	
     // Gracz
     '!opqwerty': adminFun, // KOMENDA DO UZYSKANIA ADMINA
 	'!deop': unAdminFun,
 	'!resign': unAdminFun,
+	'!p': pauseFun,
 	'!bb': exitFun,
 	'!leave': exitFun,
 
@@ -580,14 +580,6 @@ function possFun()
 		room.sendAnnouncement('Posiadanie piłki w ostatnim meczu: ' + redTeamName + ' ' + redPossessionPercentage + ' % ' + bluePossessionPercentage + ' ' + blueTeamName, null, 0xCCFF00, 'normal', 1);
 }
 
-function pauseFun()
-{ // !p
-	if (isPaused)
-		room.pauseGame(false); // wznowienie gry
-	else
-		room.pauseGame(true); // wstrzymanie gry
-}
-
 // Gracz
 function adminFun(player, arg)
 { // !opqwerty
@@ -601,6 +593,16 @@ function unAdminFun(player)
     // Rezygnacja
     room.setPlayerAdmin(player.id, false);
     return false; // The message won't be displayed
+}
+
+function pauseFun(player)
+{ // !p
+	if (player.team == 0 || room.getScores() == null) // ławka nie może pauzować
+		return false;
+	if (isPaused)
+		room.pauseGame(false); // wznowienie gry
+	else
+		room.pauseGame(true); // wstrzymanie gry
 }
 
 function exitFun(player)
@@ -784,7 +786,7 @@ room.onGameStop = function(byPlayer)
 		console.log('Gra przerwana');
 	else
 		console.log('Gra przerwana przez: ' + byPlayer.name + '#' + byPlayer.id);
-	
+	isPaused = false;
 	recArrayArray[recordingNumber] = room.stopRecording();
 	isRecording = false;
 	recordingNumber++;
