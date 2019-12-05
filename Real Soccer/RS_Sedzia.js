@@ -1,6 +1,6 @@
 /***************************************************************************************************************************************************************************
 
-Aby uzyskać uprawnienia administratora należy (domyślnie) wpisać !opqwerty. Zalecana jest zmiana nazwy tej komendy (linijka 550)
+Aby uzyskać uprawnienia administratora należy (domyślnie) wpisać !opqwerty. Zalecana jest zmiana nazwy tej komendy (linijka 553)
 
 PRZYDATNE KOMENDY DLA ADMINÓW:
 
@@ -85,6 +85,8 @@ let isTimeAddedShown = false;
 let actualTimeAdded;
 let redPossessionTicks = 0;
 let bluePossessionTicks = 0;
+
+let isPaused = false;
 
 // Mapy
 let maps = 
@@ -545,6 +547,7 @@ let commands =
 {
     // Proste
 	'!poss': possFun,
+	'!p': pauseFun,
 	
     // Gracz
     '!opqwerty': adminFun, // KOMENDA DO UZYSKANIA ADMINA
@@ -565,7 +568,7 @@ let commands =
 
 // Proste
 function possFun()
-{
+{ // !poss
 	if (redPossessionTicks + bluePossessionTicks == 0) // Trzeba pamiętać o dziedzinie
 		return false;
 	let redPossessionPercentage = Math.round(redPossessionTicks / (redPossessionTicks+bluePossessionTicks) * 100);
@@ -574,6 +577,14 @@ function possFun()
 		room.sendAnnouncement('Posiadanie piłki: ' + redTeamName + ' ' + redPossessionPercentage + ' % ' + bluePossessionPercentage + ' ' + blueTeamName, null, 0xCCFF00, 'normal', 1);
 	else
 		room.sendAnnouncement('Posiadanie piłki w ostatnim meczu: ' + redTeamName + ' ' + redPossessionPercentage + ' % ' + bluePossessionPercentage + ' ' + blueTeamName, null, 0xCCFF00, 'normal', 1);
+}
+
+function pauseFun()
+{ // !p
+	if (paused)
+		room.pauseGame(false); // wznowienie gry
+	else
+		room.pauseGame(true); // wstrzymanie gry
 }
 
 // Gracz
@@ -773,6 +784,7 @@ room.onGamePause = function(byPlayer)
 		console.log('Gra zatrzymana');
 	else
 		console.log('Gra zatrzywana przez: ' + byPlayer.name + '#' + byPlayer.id);
+	isPaused = true;
 }
 
 room.onGameUnpause = function(byPlayer)
@@ -781,6 +793,7 @@ room.onGameUnpause = function(byPlayer)
 		console.log('Gra wznowiona');
 	else
 		console.log('Gra wznowiona przez: ' + byPlayer.name + '#' + byPlayer.id);
+	isPaused = false;
 }
 
 // Zmiana drużyny
