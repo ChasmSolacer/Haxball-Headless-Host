@@ -1,6 +1,6 @@
 /***************************************************************************************************************************************************************************
 
-Aby uzyskać uprawnienia administratora należy (domyślnie) wpisać !opqwerty. Zalecana jest zmiana nazwy tej komendy (linijka 552)
+Aby uzyskać uprawnienia administratora należy (domyślnie) wpisać !opqwerty. Zalecana jest zmiana nazwy tej komendy (linijka 565)
 
 PRZYDATNE KOMENDY DLA ADMINÓW:
 
@@ -33,9 +33,13 @@ let lon = 19;
 
 /* STADION */
 // Wartości dotyczą boiska na którym rozgrywany jest mecz - wartości domyślne to oficjalna mapa RS
+let baseStadiumWidth = 1150;
+let baseStadiumHeight = 600;
 let stadiumWidth = 1150;
 let stadiumHeight = 600;
 let ballRadius = 9.8;
+let triggerDistance;
+let outLineY;
 let throwInLeeway = 350; // dozwolone odchylenie w poziomie przy wyrzucie z autu
 let greenLine = 510; // punkt, w którym gracz jest styczny z linią boczną
 let cornerPenaltyRadius = 330; // najmniejsza odległość od gracza do rogu, w której gracz nie przekracza łuku
@@ -45,10 +49,10 @@ let cornerRightUpPos = {x: 1150, y: -600};
 let cornerRightDownPos = {x: 1150, y: 600};
 
 /* USTAWIENIA */
-let triggerDistance = ballRadius + 15 + 0.01;
-let outLineY = stadiumWidth - (ballRadius / 2) + 6;
-stadiumWidth += (ballRadius / 2) + 6;
-stadiumHeight += (ballRadius / 2) + 6;
+triggerDistance = ballRadius + 15 + 0.01;
+outLineY = stadiumWidth - (ballRadius / 2) + 6; // 1150 - 9.8/2 + 6 = 1152.1
+stadiumWidth = baseStadiumWidth + (ballRadius / 2) + 6; // 1150 + 9.8/2 + 6 = 1160.9
+stadiumHeight = baseStadiumHeight + (ballRadius / 2) + 6; // 600 + 4.9 + 6 = 610.9
 
 let players = null;
 let population = 0;
@@ -148,6 +152,15 @@ let recordingNumber = 0;
 function saveReplay(replayNumber)
 { // Zapis powtórki
 	saveFile(recArrayArray[replayNumber], 'Powtórka' + replayNumber + '.hbr2');
+}
+
+function reactToBallRadiusChange()
+{
+	ballRadius = room.getDiscProperties(0).radius;
+	triggerDistance = ballRadius + 15 + 0.01;
+	outLineY = stadiumWidth - (ballRadius / 2) + 6;
+	stadiumWidth = baseStadiumWidth + (ballRadius / 2) + 6;
+	stadiumHeight = baseStadiumHeight + (ballRadius / 2) + 6;
 }
 
 function ignore(string)
@@ -555,6 +568,12 @@ let commands =
 	'!p': pauseFun,
 	'!bb': exitFun,
 	'!leave': exitFun,
+	'!getball': getBallFun,
+	'!getdisccount': getDiscCountFun,
+	
+	// Gracz i argumenty
+	'!getdisc': getDiscFun,
+	'!getplayer': getPlayerFun,
 
     // Admin
 	'!cb': clearBansFun,
@@ -564,7 +583,10 @@ let commands =
 	'!tblue': teamBlueNameFun,
 	'!l': loadFun,
 	'!load': loadFun,
-	'!e': eFun
+	'!e': eFun,
+	'!setdisc': setDiscFun,
+	'!setplayer': setPlayerFun,
+	'!setball': setBallFun
 }
 
 // Proste
@@ -608,6 +630,35 @@ function pauseFun(player)
 function exitFun(player)
 { // !bb, !leave
 	room.kickPlayer(player.id, '🔻 ' + player.name + ' wychodzi', false);
+}
+
+function getBallFun(player)
+{ // !getball
+	room.sendAnnouncement('[PRYWATNA] Kulka: ' + JSON.stringify(room.getDiscProperties(0)).split(',').join(', '), player.id, 0x5588FF, 'normal', 1);
+	console.log('Kulka: ' + JSON.stringify(room.getDiscProperties(0)).split(',').join(', '));
+	return false;
+}
+
+function getDiscCountFun(player)
+{ // !getdisccount
+	room.sendAnnouncement('[PRYWATNA] Liczba dysków: ' + room.getDiscCount(), player.id, 0x5588FF, 'normal', 1);
+	console.log('Liczba dysków: ' + room.getDiscCount());
+	return false;
+}
+
+// Gracz i argumenty
+function getDiscFun(player, arg)
+{ // !getdisc 0
+	room.sendAnnouncement('[PRYWATNA] Dysk ' + arg + ': ' + JSON.stringify(room.getDiscProperties(arg)).split(',').join(', '), player.id, 0x5588FF, 'normal', 1);
+	console.log('Dysk ' + arg + ': ' + JSON.stringify(room.getDiscProperties(arg)).split(',').join(', '));
+	return false;
+}
+
+function getPlayerFun(player, arg)
+{ // !getplayer 0
+	room.sendAnnouncement('[PRYWATNA] Gracz ' + arg + ': ' + JSON.stringify(room.getPlayerDiscProperties(arg)).split(',').join(', '), player.id, 0x5588FF, 'normal', 1);
+	console.log('Gracz ' + arg + ': ' + JSON.stringify(room.getPlayerDiscProperties(arg)).split(',').join(', '));
+	return false;
 }
 
 // Admin
@@ -672,6 +723,95 @@ function eFun(player, arg)
 	return false;
 }
 
+function setDiscFun(player, arg)
+{ // !setdisc 0 x 0
+	if (player.admin === true)
+	{
+		let ktory;
+		let co;
+		let ileRaw;
+		let ile;
+		
+		let spacePos = arg.search(' ');
+		if (spacePos > -1)
+		{
+			ktory = parseInt(arg.substr(0, spacePos)); // |0| x 0
+			
+			let arg2 = arg.substr(spacePos+1, arg.length); // 0 |x 0|
+			let spacePos2 = arg2.search(' ');
+			if (spacePos2 > -1)
+			{
+				co = arg2.substr(0, spacePos2); // |x| 0
+				ileRaw = arg2.substr(spacePos2 + 1, arg2.length); // x |0|
+				if (ignore(ileRaw).substr(0, 2) === '0X') // czy wartość jest szesnastkowa (np. przy ustawianiu koloru)
+					ile = parseInt(ileRaw);
+				else
+					ile = parseFloat(ileRaw);
+			}
+		}
+		else
+		{
+			room.sendAnnouncement('[PRYWATNA] ⛔Nie udało się', player.id, 0xFFCC00, 'normal', 1);
+			return;
+		}
+		let coIle = {};
+		coIle[co] = ile; // {x: 0}
+		room.setDiscProperties(ktory, coIle); // (0, {x: 0})
+		
+		room.sendAnnouncement('[PRYWATNA] Dysk: ' + ktory + ' ma teraz wartość: ' + co + ' równą: ' + ile, player.id, 0x5588FF, 'normal', 1);
+		console.log('Dysk: ' + ktory + ' ma teraz wartość: ' + co + ' równą: ' + ile);
+	}
+	return false;
+}
+
+function setPlayerFun(player, arg)
+{ // !setplayer 0 x 0
+	if (player.admin === true)
+	{
+		let id;
+		let co;
+		let ileRaw;
+		let ile;
+		
+		let spacePos = arg.search(' ');
+		if (spacePos > -1)
+		{
+			id = parseInt(arg.substr(0, spacePos));
+			
+			let arg2 = arg.substr(spacePos+1, arg.length);
+			let spacePos2 = arg2.search(' ');
+			if (spacePos2 > -1)
+			{
+				co = arg2.substr(0, spacePos2);
+				ileRaw = arg2.substr(spacePos2 + 1, arg2.length);
+				if (ignore(ileRaw).substr(0, 2) === '0X')
+					ile = parseInt(ileRaw);
+				else
+					ile = parseFloat(ileRaw);
+			}
+		}
+		else
+		{
+			room.sendAnnouncement('[PRYWATNA] ⛔Nie udało się', player.id, 0xFFCC00, 'normal', 1);
+			return;
+		}
+		let coIle = {};
+		coIle[co] = ile;
+		room.setPlayerDiscProperties(id, coIle);
+		
+		room.sendAnnouncement('[PRYWATNA] Dysk gracza: ' + id + ' ma teraz wartość: ' + co + ' równą: ' + ile, player.id, 0x5588FF, 'normal', 1);
+		console.log('Dysk gracza: ' + id + ' ma teraz wartość: ' + co + ' równą: ' + ile);
+	}
+	return false;
+}
+
+function setBallFun(player, arg)
+{ // !setball x 0
+	let arg2 = '0 ' + arg;
+	setDiscFun(player, arg2);
+	return false;
+}
+
 /*
 	****************************** Zdarzenia ******************************
 */
@@ -692,6 +832,7 @@ let tickCount = 0;
 room.onGameTick = function()
 {
     updatePlayerList();
+	reactToBallRadiusChange();
 	isThrowInCorrect();
     getLastTouchTheBall();
     checkBallPosition();
@@ -765,8 +906,7 @@ room.onGameStart = function(byPlayer)
 	else
 		console.log('Gra rozpoczęta przez: ' + byPlayer.name + '#' + byPlayer.id);
 	
-	ballRadius = room.getDiscProperties(0).radius;
-    triggerDistance = ballRadius + 15 + 0.01;
+	reactToBallRadiusChange();
 	lastTeamTouched = 0;
 	lineCrossedPlayers = [{name: 'temp', times: 0}];
     lastScores = room.getScores().red + room.getScores().blue;
@@ -877,8 +1017,7 @@ room.onTeamGoal = function(team)
 
 room.onPositionsReset = function()
 {
-	ballRadius = room.getDiscProperties(0).radius;
-    triggerDistance = ballRadius + 15 + 0.01;
+	reactToBallRadiusChange();
 }
 
 room.onTeamVictory = function(scores)
