@@ -1,6 +1,6 @@
 /***************************************************************************************************************************************************************************
 
-Aby uzyskać uprawnienia administratora należy (domyślnie) wpisać !opqwerty. Zalecana jest zmiana nazwy tej komendy (linijka 565)
+Aby uzyskać uprawnienia administratora należy (domyślnie) wpisać !opqwerty. Zalecana jest zmiana nazwy tej komendy (linijka 567)
 
 PRZYDATNE KOMENDY DLA ADMINÓW:
 
@@ -91,6 +91,8 @@ let redPossessionTicks = 0;
 let bluePossessionTicks = 0;
 
 let isPaused = false;
+
+let ballColor = 0xFFFFFF;
 
 // Mapy
 let maps = 
@@ -586,7 +588,8 @@ let commands =
 	'!e': eFun,
 	'!setdisc': setDiscFun,
 	'!setplayer': setPlayerFun,
-	'!setball': setBallFun
+	'!setball': setBallFun,
+	'!ballcolor': setStableBallColorFun
 }
 
 // Proste
@@ -812,6 +815,17 @@ function setBallFun(player, arg)
 	return false;
 }
 
+function setStableBallColorFun(player, arg)
+{ // !ballcolor 0xffffff
+	if (player.admin === true)
+	{
+		ballColor = parseInt(arg);
+		room.setDiscProperties(0, {color: ballColor});
+	}
+	else
+		room.sendAnnouncement('[PRYWATNA] ⛔Nie. Nie wiemy, czy można ci ufać.', player.id, 0xFF3300, 'normal', 1);
+}
+
 /*
 	****************************** Zdarzenia ******************************
 */
@@ -916,6 +930,8 @@ room.onGameStart = function(byPlayer)
 	redPossessionTicks = 0;
 	bluePossessionTicks = 0;
 	
+	room.setDiscProperties(0, {color: ballColor}); // piłka zmienia kolor na ustalony
+	
 	room.startRecording();
 	isRecording = true;
 }
@@ -1018,6 +1034,7 @@ room.onTeamGoal = function(team)
 room.onPositionsReset = function()
 {
 	reactToBallRadiusChange();
+	room.setDiscProperties(0, {color: ballColor}); // piłka zmienia kolor na ustalony
 }
 
 room.onTeamVictory = function(scores)
