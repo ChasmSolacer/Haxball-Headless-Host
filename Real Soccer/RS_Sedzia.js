@@ -1,6 +1,7 @@
+// Podstawa: http://rshl.eu/pages.php?page=autoreferee
 /***************************************************************************************************************************************************************************
 
-Aby uzyskać uprawnienia administratora należy (domyślnie) wpisać !opqwerty. Zalecana jest zmiana nazwy tej komendy (linijka 567)
+Aby uzyskać uprawnienia administratora należy (domyślnie) wpisać !opqwerty. Zalecana jest zmiana nazwy tej komendy (linijka 593)
 
 PRZYDATNE KOMENDY DLA ADMINÓW:
 
@@ -85,6 +86,9 @@ let lineCrossedPlayers = [{name: 'temp', times: 0}];
 let isBallKickedOutside = false;
 let timeOutside = 0;
 let playTimeInMinutes = 20; // Przy limicie czasu 0, mecz domyślnie trwa 20 minut
+let isSubstitutionsEnabled = true; // Czy przypominać o zmianach
+let substitutionIntervalInMinutes = 5; // Co ile minut mają być zmiany w długim meczu
+let isSubstitutionsRecommendedShown = false;
 let isTimeAddedShown = false;
 let actualTimeAdded;
 let redPossessionTicks = 0;
@@ -260,6 +264,28 @@ function displayAddedTime() // onGameTick
 				room.sendAnnouncement('+01:00', null, 0x88FF88, 'bold', 1);
 			}
 			isTimeAddedShown = true; // już pokazano
+		}
+	}
+}
+
+function displaySubstitutionsRecommended()
+{
+	let scores = room.getScores();
+	let timeLimit = scores.timeLimit;
+	let trimmedTime = Math.floor(scores.time); // czas w sekundach zaokrąglony w dół
+	if (timeLimit === 0 && trimmedTime > 0 && trimmedTime <= (playTimeInMinutes-substitutionIntervalInMinutes)*60)
+	{ // nieskończony czas i gra rozpoczęła się i nie jest po 15. minucie
+		if (trimmedTime % (substitutionIntervalInMinutes*60) === 0 && isSubstitutionsRecommendedShown === false)
+		{ // co 5 minut i nie wyświetlono przed chwilą
+			let admins = getPlayersByAdmin(true);
+			// Wiadomość do wszystkich adminów
+			admins.forEach((admin) => {room.sendAnnouncement('(Zalecane zmiany)', admin.id, 0xFFFF88, 'italic', 2);});
+			console.log('(Zalecane zmiany)');
+			isSubstitutionsRecommendedShown = true; // już wyświetlono
+		}
+		if (trimmedTime % (substitutionIntervalInMinutes*60) > 0)
+		{ // czas już nie jest wielokrotnością 5 minut
+			isSubstitutionsRecommendedShown = false; // można pokazać przypomnienie za 5 min
 		}
 	}
 }
@@ -579,6 +605,7 @@ let commands =
 
     // Admin
 	'!cb': clearBansFun,
+	'!subs': substitutionsReminderSwitchFun,
 
 	// Admin i argumenty
 	'!tred': teamRedNameFun,
@@ -674,6 +701,18 @@ function clearBansFun(player)
 	}
 	else
 		room.sendAnnouncement('[PRYWATNA] ⛔Nie. Nie wiemy, czy można ci ufać.', player.id, 0xFF3300, 'normal', 1);
+}
+
+function substitutionsReminderSwitchFun(player)
+{ // !subs
+	if (player.admin === true)
+	{
+		isSubstitutionsEnabled = !isSubstitutionsEnabled;
+		room.sendAnnouncement('[PRYWATNA] Przypomnienia o zmianach ' + (isSubstitutionsEnabled ? 'włączone' : 'wyłączone'), player.id, 0xFFFF00, 'normal', 1);
+	}
+	else
+		room.sendAnnouncement('[PRYWATNA] ⛔Nie. Nie wiemy, czy można ci ufać.', player.id, 0xFF3300, 'normal', 1);
+	return false;
 }
 
 // Admin i argumenty
@@ -854,6 +893,8 @@ room.onGameTick = function()
     hasBallLeftTheLine();
     addedTime();
     displayAddedTime();
+	if (isSubstitutionsEnabled)
+		displaySubstitutionsRecommended();
 	
 	// Posiadanie piłki - okresy
 	if (lastTeamTouched == Team.RED)
@@ -926,6 +967,7 @@ room.onGameStart = function(byPlayer)
     lastScores = room.getScores().red + room.getScores().blue;
     timeOutside = 0;
     isTimeAddedShown = false;
+	isSubstitutionsRecommendedShown = false;
     ballYPosition = 0;
 	redPossessionTicks = 0;
 	bluePossessionTicks = 0;
