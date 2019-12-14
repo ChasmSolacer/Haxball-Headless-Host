@@ -279,7 +279,7 @@ function displaySubstitutionsRecommended()
 		{ // co 5 minut i nie wyświetlono przed chwilą
 			let admins = getPlayersByAdmin(true);
 			// Wiadomość do wszystkich adminów
-			admins.forEach((admin) => {room.sendAnnouncement('(Zalecane zmiany)', admin.id, 0xFFFF88, 'italic', 2);});
+			admins.forEach((admin) => {room.sendAnnouncement('(Zalecane zmiany)', admin.id, 0xFFFF88, 'small-italic', 2);});
 			console.log('(Zalecane zmiany)');
 			isSubstitutionsRecommendedShown = true; // już wyświetlono
 		}
@@ -447,7 +447,7 @@ function printPlayersLine() // isThrowInCorrect
 			if (lineCrossedPlayers[j].name == playersNotInLine[i])
 			{
 				lineCrossedPlayers[j].times = lineCrossedPlayers[j].times + 1;
-				room.sendAnnouncement('LINIA - ' + lineCrossedPlayers[j].name + ' {' + lineCrossedPlayers[j].times + '}', null, 0xFFCC00, 'normal', 1);
+				room.sendAnnouncement('LINIA - ' + lineCrossedPlayers[j].name + ' {' + lineCrossedPlayers[j].times + '}', null, 0xFFCC00, 'small', 1);
 				found = true;
 			}
 		}
@@ -459,7 +459,7 @@ function printPlayersLine() // isThrowInCorrect
 				times: 1,
 				punished: false
 			});
-			room.sendAnnouncement('LINIA - ' + playersNotInLine[i] + ' {1}', null, 0xFFCC00, 'normal', 1);
+			room.sendAnnouncement('LINIA - ' + playersNotInLine[i] + ' {1}', null, 0xFFCC00, 'small', 1);
 		}
     }
 }
@@ -533,24 +533,24 @@ function isThrowInCorrect() // onGameTick
 
         if (lastCall=='2')
         {
-            room.sendAnnouncement('Aut dla ' + redTeamName + ' (BRAK KOPNIĘCIA)', null, 0xFFFF00, 'normal', 1);
+            room.sendAnnouncement('Aut dla ' + redTeamName + ' (BRAK KOPNIĘCIA)', null, 0xFFFF00, 'small', 1);
         }
         if (lastCall=='1')
         {
-            room.sendAnnouncement('Aut dla ' + blueTeamName + ' (BRAK KOPNIĘCIA)', null, 0xFFFF00, 'normal', 1);
+            room.sendAnnouncement('Aut dla ' + blueTeamName + ' (BRAK KOPNIĘCIA)', null, 0xFFFF00, 'small', 1);
         }
 
         isBallKickedOutside == false;
     }
 	else if (isCrossing && LTTstring != lastCall && (lastCall=='1' || lastCall=='2'))
     {
-        room.sendAnnouncement('NIE TA DRUŻYNA', null, 0xFFFF00, 'normal', 1);
+        room.sendAnnouncement('NIE TA DRUŻYNA', null, 0xFFFF00, 'small', 1);
         wrongThrowPosition = false;
         trigger = false;
     }
 	else if (isCrossing && wrongThrowPosition && LTTstring==lastCall && (lastCall=='1' || lastCall=='2'))
     {
-        room.sendAnnouncement('NIE W TYM MIEJSCU', null, 0xFFFF00, 'normal', 1);
+        room.sendAnnouncement('NIE W TYM MIEJSCU', null, 0xFFFF00, 'small', 1);
         wrongThrowPosition = false;
         trigger = false;
     }
