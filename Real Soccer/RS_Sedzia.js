@@ -86,9 +86,9 @@ let lineCrossedPlayers = [{name: 'temp', times: 0}];
 let isBallKickedOutside = false;
 let timeOutside = 0;
 let playTimeInMinutes = 20; // Przy limicie czasu 0, mecz domyślnie trwa 20 minut
-let isSubstitutionsEnabled = true; // Czy przypominać o zmianach
-let substitutionIntervalInMinutes = 5; // Co ile minut mają być zmiany w długim meczu
-let isSubstitutionsRecommendedShown = false;
+let isAutoPossEnabled = true; // Czy wyświetlać posiadanie co jakiś czas
+let autoPossIntervalInMinutes = 5; // Co ile minut wyświetlić posiadanie piłki
+let isAutoPossShown = false;
 let isTimeAddedShown = false;
 let actualTimeAdded;
 let redPossessionTicks = 0;
@@ -250,7 +250,7 @@ function displayAddedTime() // onGameTick
 	{ // limit playTimeInMinutes = 20 minut
 		if (scores.time > playTimeInMinutes*60-20 && !isTimeAddedShown)
 		{ // 20s przed upływem 20 minut i nie pokazano wcześniej
-			actualTimeAdded = Math.round(timeOutside/60 / 8); // piłka przebywa poza boiskiem średnio przez 25% czasu gry, stąd dzielenie przez 8
+			actualTimeAdded = Math.round(timeOutside/60 / 8); // piłka przebywa poza boiskiem średnio przez 25% czasu gry, stąd dzielenie przez 8, żeby nie doliczać za dużo
 			if (actualTimeAdded < 60 && actualTimeAdded > -1)
 			{
 				room.sendAnnouncement('+00:' + leadingZero(actualTimeAdded), null, 0x88FF88, 'bold', 1);
@@ -268,24 +268,31 @@ function displayAddedTime() // onGameTick
 	}
 }
 
-function displaySubstitutionsRecommended()
-{
+function displayPossAutomatically() // onGameTick()
+{ // wyświetlanie posiadania piłki co jakiś czas
 	let scores = room.getScores();
 	let timeLimit = scores.timeLimit;
 	let trimmedTime = Math.floor(scores.time); // czas w sekundach zaokrąglony w dół
-	if (timeLimit === 0 && trimmedTime > 0 && trimmedTime <= (playTimeInMinutes-substitutionIntervalInMinutes)*60)
-	{ // nieskończony czas i gra rozpoczęła się i nie jest po 15. minucie
-		if (trimmedTime % (substitutionIntervalInMinutes*60) === 0 && isSubstitutionsRecommendedShown === false)
+	if (trimmedTime > 0 && trimmedTime < playTimeInMinutes*60)
+	{ // gra rozpoczęła się i jest przed 20. minutą
+		if (trimmedTime % (autoPossIntervalInMinutes*60) === 0 && isAutoPossShown === false)
 		{ // co 5 minut i nie wyświetlono przed chwilą
-			let admins = getPlayersByAdmin(true);
-			// Wiadomość do wszystkich adminów
-			admins.forEach((admin) => {room.sendAnnouncement('(Zalecane zmiany)', admin.id, 0xFFFF88, 'small-italic', 2);});
-			console.log('(Zalecane zmiany)');
-			isSubstitutionsRecommendedShown = true; // już wyświetlono
+			possFun(); // wyświetlanie posiadania piłki
+			console.log('(wyświetlono posiadanie piłki)');
+			isAutoPossShown = true; // już wyświetlono
 		}
-		if (trimmedTime % (substitutionIntervalInMinutes*60) > 0)
+		if (trimmedTime % (autoPossIntervalInMinutes*60) > 0)
 		{ // czas już nie jest wielokrotnością 5 minut
-			isSubstitutionsRecommendedShown = false; // można pokazać przypomnienie za 5 min
+			isAutoPossShown = false; // można pokazać przypomnienie za 5 min
+		}
+	}
+	else if (trimmedTime > playTimeInMinutes*60 + actualTimeAdded)
+	{ // jest koniec doliczonego czasu
+		if (isAutoPossShown === false)
+		{
+			possFun(); // wyświetlanie posiadania piłki
+			console.log('(wyświetlono posiadanie piłki)');
+			isAutoPossShown = true; // już wyświetlono
 		}
 	}
 }
@@ -311,7 +318,7 @@ function isOutsideStadium(position)
     return isOutsideRightBound(position) || isOutsideLeftBound(position) || isOutsideDownBound(position) || isOutsideUpBound(position);
 }
 
-function addedTime() // onGameTick
+function handleAddedTime() // onGameTick
 { // doliczony czas
     let ballPosition = room.getBallPosition();
     if (isOutsideStadium(ballPosition))
@@ -605,7 +612,7 @@ let commands =
 
     // Admin
 	'!cb': clearBansFun,
-	'!subs': substitutionsReminderSwitchFun,
+	'!autoposs': AutoPossSwitchFun,
 
 	// Admin i argumenty
 	'!tred': teamRedNameFun,
@@ -703,12 +710,12 @@ function clearBansFun(player)
 		room.sendAnnouncement('[PRYWATNA] ⛔Nie. Nie wiemy, czy można ci ufać.', player.id, 0xFF3300, 'normal', 1);
 }
 
-function substitutionsReminderSwitchFun(player)
-{ // !subs
+function AutoPossSwitchFun(player)
+{ // !autoposs
 	if (player.admin === true)
 	{
-		isSubstitutionsEnabled = !isSubstitutionsEnabled;
-		room.sendAnnouncement('[PRYWATNA] Przypomnienia o zmianach ' + (isSubstitutionsEnabled ? 'włączone' : 'wyłączone'), player.id, 0xFFFF00, 'normal', 1);
+		isAutoPossEnabled = !isAutoPossEnabled;
+		room.sendAnnouncement('[PRYWATNA] Automatyczne wyświetlanie posiadania piłki ' + (isAutoPossEnabled ? 'włączone' : 'wyłączone'), player.id, 0xFFFF00, 'normal', 1);
 	}
 	else
 		room.sendAnnouncement('[PRYWATNA] ⛔Nie. Nie wiemy, czy można ci ufać.', player.id, 0xFF3300, 'normal', 1);
@@ -891,10 +898,10 @@ room.onGameTick = function()
     checkBallPosition();
     isBackRequired();
     hasBallLeftTheLine();
-    addedTime();
+    handleAddedTime();
     displayAddedTime();
-	if (isSubstitutionsEnabled)
-		displaySubstitutionsRecommended();
+	if (isAutoPossEnabled)
+		displayPossAutomatically();
 	
 	// Posiadanie piłki - okresy
 	if (lastTeamTouched == Team.RED)
@@ -967,7 +974,7 @@ room.onGameStart = function(byPlayer)
     lastScores = room.getScores().red + room.getScores().blue;
     timeOutside = 0;
     isTimeAddedShown = false;
-	isSubstitutionsRecommendedShown = false;
+	isAutoPossShown = false;
     ballYPosition = 0;
 	redPossessionTicks = 0;
 	bluePossessionTicks = 0;
