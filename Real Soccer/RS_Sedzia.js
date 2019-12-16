@@ -1,7 +1,7 @@
 // Podstawa: http://rshl.eu/pages.php?page=autoreferee
 /***************************************************************************************************************************************************************************
 
-Aby uzyskać uprawnienia administratora należy (domyślnie) wpisać !opqwerty. Zalecana jest zmiana nazwy tej komendy (linijka 593)
+Aby uzyskać uprawnienia administratora należy (domyślnie) wpisać !op qwerty. Zalecana jest zmiana hasła po !op (linijka 683)
 
 PRZYDATNE KOMENDY DLA ADMINÓW:
 
@@ -597,7 +597,6 @@ let commands =
 	'!poss': possFun,
 	
     // Gracz
-    '!opqwerty': adminFun, // KOMENDA DO UZYSKANIA ADMINA
 	'!deop': unAdminFun,
 	'!resign': unAdminFun,
 	'!p': pauseFun,
@@ -607,6 +606,7 @@ let commands =
 	'!getdisccount': getDiscCountFun,
 	
 	// Gracz i argumenty
+    '!op': adminFun, // KOMENDA DO UZYSKANIA ADMINA
 	'!getdisc': getDiscFun,
 	'!getplayer': getPlayerFun,
 
@@ -640,18 +640,11 @@ function possFun()
 }
 
 // Gracz
-function adminFun(player, arg)
-{ // !opqwerty
-    // Daje wpisującemu admina
-    room.setPlayerAdmin(player.id, true);
-    return false; // The message won't be displayed
-}
-
 function unAdminFun(player)
 { // !deop
     // Rezygnacja
     room.setPlayerAdmin(player.id, false);
-    return false; // The message won't be displayed
+    return false; // Wiadomość nie będzie wyświetlona
 }
 
 function pauseFun(player)
@@ -684,6 +677,15 @@ function getDiscCountFun(player)
 }
 
 // Gracz i argumenty
+function adminFun(player, arg)
+{ // !op qwerty
+    // Daje wpisującemu admina
+	let adminPassword = 'qwerty'; // HASŁO ADMINISTRATORA
+	if (arg === adminPassword)
+		room.setPlayerAdmin(player.id, true);
+    return false;
+}
+
 function getDiscFun(player, arg)
 { // !getdisc 0
 	room.sendAnnouncement('[PRYWATNA] Dysk ' + arg + ': ' + JSON.stringify(room.getDiscProperties(arg)).split(',').join(', '), player.id, 0x5588FF, 'normal', 1);
