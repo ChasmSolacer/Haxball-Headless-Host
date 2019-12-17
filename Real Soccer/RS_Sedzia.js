@@ -592,38 +592,38 @@ function hasBallLeftTheLine() // ???
 	****************************** Komendy ******************************
 */
 let commands =
-{
+{ // komendy nie rozróżniają wielkości liter, jeśli któraś zostanie wykryta, jest zamieniana na WIELKIE LITERY
     // Proste
-	'!poss': possFun,
+	'!POSS': possFun,
 	
     // Gracz
-	'!deop': unAdminFun,
-	'!resign': unAdminFun,
-	'!p': pauseFun,
-	'!bb': exitFun,
-	'!leave': exitFun,
-	'!getball': getBallFun,
-	'!getdisccount': getDiscCountFun,
+	'!DEOP': unAdminFun,
+	'!RESIGN': unAdminFun,
+	'!P': pauseFun,
+	'!BB': exitFun,
+	'!LEAVE': exitFun,
+	'!GETBALL': getBallFun,
+	'!GETDISCCOUNT': getDiscCountFun,
 	
 	// Gracz i argumenty
-    '!op': adminFun, // KOMENDA DO UZYSKANIA ADMINA
-	'!getdisc': getDiscFun,
-	'!getplayer': getPlayerFun,
+    '!OP': adminFun, // KOMENDA DO UZYSKANIA ADMINA
+	'!GETDISC': getDiscFun,
+	'!GETPLAYER': getPlayerFun,
 
     // Admin
-	'!cb': clearBansFun,
-	'!autoposs': AutoPossSwitchFun,
+	'!CB': clearBansFun,
+	'!AUTOPOSS': AutoPossSwitchFun,
 
 	// Admin i argumenty
-	'!tred': teamRedNameFun,
-	'!tblue': teamBlueNameFun,
-	'!l': loadFun,
-	'!load': loadFun,
-	'!e': eFun,
-	'!setdisc': setDiscFun,
-	'!setplayer': setPlayerFun,
-	'!setball': setBallFun,
-	'!ballcolor': setStableBallColorFun
+	'!TRED': teamRedNameFun,
+	'!TBLUE': teamBlueNameFun,
+	'!L': loadFun,
+	'!LOAD': loadFun,
+	'!E': eFun,
+	'!SETDISC': setDiscFun,
+	'!SETPLAYER': setPlayerFun,
+	'!SETBALL': setBallFun,
+	'!BALLCOLOR': setStableBallColorFun
 }
 
 // Proste
@@ -1111,9 +1111,9 @@ room.onPlayerChat = function(player, message)
 	let command = message.substr(0, spacePos !== -1 ? spacePos : message.length);
 	let arg = message.substr(command.length + 1, message.length);
 	
-	// komenda ze słownika
-	if (commands.hasOwnProperty(command) === true)
-		return commands[command](player, arg);
+	// komenda ze słownika zamieniona na WIELKIE LITERY
+	if (commands.hasOwnProperty(command.toLocaleUpperCase(locale)) === true)
+		return commands[command.toLocaleUpperCase(locale)](player, arg);
 }
 
 room.onStadiumChange = function(newStadiumName, byPlayer)
