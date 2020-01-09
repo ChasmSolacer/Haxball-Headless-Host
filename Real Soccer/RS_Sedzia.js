@@ -1029,7 +1029,7 @@ room.onPlayerTeamChange = function(changedPlayer, byPlayer)
 }
 
 room.onPlayerBallKick = function(byPlayer)
- // KOPNIĘCIE PIŁKI
+{ // KOPNIĘCIE PIŁKI
     let ballPosition = room.getBallPosition();
     if (lastPlayerTouched != null && byPlayer.id != lastPlayerTouched.id)
     { // jeżeli ostatni gracz istnieje i gracz nie jest ostatnim graczem (nie asystuje samemu sobie)
