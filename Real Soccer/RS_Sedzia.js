@@ -1,7 +1,9 @@
+let adminPassword = 'qwerty'; // HASŁO ADMINISTRATORA
+
 // Podstawa: http://rshl.eu/pages.php?page=autoreferee
 /***************************************************************************************************************************************************************************
 
-Aby uzyskać uprawnienia administratora należy (domyślnie) wpisać !op qwerty. Zalecana jest zmiana hasła po !op (linijka 683)
+Aby uzyskać uprawnienia administratora należy (domyślnie) wpisać !op qwerty. Zalecana jest zmiana hasła (linijka 1)
 
 PRZYDATNE KOMENDY DLA ADMINÓW:
 
@@ -39,7 +41,7 @@ let baseStadiumHeight = 600;
 let stadiumWidth = 1150;
 let stadiumHeight = 600;
 let ballRadius = 9.8;
-let triggerDistance;
+let isBackFurtherNeededDistance;
 let outLineY;
 let throwInLeeway = 350; // dozwolone odchylenie w poziomie przy wyrzucie z autu
 let greenLine = 510; // punkt, w którym gracz jest styczny z linią boczną
@@ -50,7 +52,7 @@ let cornerRightUpPos = {x: 1150, y: -600};
 let cornerRightDownPos = {x: 1150, y: 600};
 
 /* USTAWIENIA */
-triggerDistance = ballRadius + 15 + 0.01;
+isBackFurtherNeededDistance = ballRadius + 15 + 0.01;
 outLineY = stadiumWidth - (ballRadius / 2) + 6; // 1150 - 9.8/2 + 6 = 1152.1
 stadiumWidth = baseStadiumWidth + (ballRadius / 2) + 6; // 1150 + 9.8/2 + 6 = 1160.9
 stadiumHeight = baseStadiumHeight + (ballRadius / 2) + 6; // 600 + 4.9 + 6 = 610.9
@@ -73,12 +75,12 @@ let bijacze = new Map(); // kto i ile razy banował innych graczy (niewykorzysty
 let lastScores = 0;
 let lastTeamTouched = 0;
 let ballYPosition;
-let exitingPos = null;
+let exitingXPos = null; // miejsce wybicia piłki z autu
 let previousBallYPosition;
 let lastPlayerTouched = null;
 let previousPlayerTouched = null;
 let assistingPlayer = null;
-let backMSG = false;
+let backFurtherMsgCanBeShown = false;
 let lastCall; // 1, 2, CK, GK
 let isBallUp = false;
 let crossed = false;
@@ -152,18 +154,18 @@ function saveFile(data, filename)
 	saveAs(blob, filename);
 }
 
-let recArrayArray = new Array();
+let replays = new Array();
 let isRecording = false;
-let recordingNumber = 0;
+let replayNumber = 0;
 function saveReplay(replayNumber)
 { // Zapis powtórki
-	saveFile(recArrayArray[replayNumber], 'Powtórka' + replayNumber + '.hbr2');
+	saveFile(replays[replayNumber], 'Powtórka' + replayNumber + '.hbr2');
 }
 
 function reactToBallRadiusChange()
 {
 	ballRadius = room.getDiscProperties(0).radius;
-	triggerDistance = ballRadius + 15 + 0.01;
+	isBackFurtherNeededDistance = ballRadius + 15 + 0.01;
 	outLineY = stadiumWidth - (ballRadius / 2) + 6;
 	stadiumWidth = baseStadiumWidth + (ballRadius / 2) + 6;
 	stadiumHeight = baseStadiumHeight + (ballRadius / 2) + 6;
@@ -333,14 +335,14 @@ function checkBallPosition() // onGameTick
 { // informuje o autach, rożnych itd.
     let ballPosition = room.getBallPosition();
     if (isOutsideStadium(ballPosition))
-	{
+	{ // jeżeli piłka jest poza boiskiem
         if (!isBallOutsideStadium)
-		{
-            isBallOutsideStadium = true;
-            exitingPos = ballPosition.x;
+		{ // jeżeli piłka nie była poza boiskiem
+            isBallOutsideStadium = true; // piłka była poza poiskiem
+            exitingXPos = ballPosition.x;
             let totalScores = room.getScores().red + room.getScores().blue;
             if (lastScores != totalScores)
-			{ // jeżeli padła bramka, to nic nie wyświetlamy
+			{ // jeżeli padła bramka, to nie wyświetlamy CK i GK
                 lastScores = totalScores;
                 return false;
             }
@@ -366,7 +368,7 @@ function checkBallPosition() // onGameTick
             }
             else
 			{ // Auty
-                isBallKickedOutside = false;
+                isBallKickedOutside = false; // oczekiwanie na wykopanie
 				if (lastTeamTouched == Team.RED)
 					room.sendAnnouncement('Aut dla ' + blueTeamName, null, 0xFFFF00, 'normal', 1);
 				else
@@ -377,8 +379,8 @@ function checkBallPosition() // onGameTick
     }
     else
 	{
-        isBallOutsideStadium = false;
-        backMSG = true;
+        isBallOutsideStadium = false; // piłka nie jest całkowicie poza boiskiem
+        backFurtherMsgCanBeShown = true; // gotowość do pokazania do przodu/do tyłu
     }
     return true;
 }
@@ -394,7 +396,7 @@ function isTouchingBall(player)
 { // czy gracz dotyka piłkę
 	let ballPosition = room.getBallPosition();
 	let distancePlayerToBall = getDistanceBetweenPoints(player.position, ballPosition);
-	return distancePlayerToBall < triggerDistance;
+	return distancePlayerToBall < isBackFurtherNeededDistance;
 }
 
 function getLastTouchTheBall() // onGameTick
@@ -471,61 +473,61 @@ function printPlayersLine() // isThrowInCorrect
     }
 }
 
-let trigger = false;
+let isBackFurtherNeeded = false;
 let wrongThrowPosition = false;
 function isBackRequired()
 {
     let ballPosition = room.getBallPosition();
     if (!isBallKickedOutside)
-    {
+    { // jeżeli piłki nie wykopano z autu
 		if (lastCall=='1')
-		{
-			if ((ballPosition.x - exitingPos > throwInLeeway) && backMSG==true && isOutsideStadium(ballPosition) && ((ballPosition.y - outLineY > 20) || (ballPosition.y - outLineY < -20)))
+		{ // R
+			if ((ballPosition.x - exitingXPos > throwInLeeway) && backFurtherMsgCanBeShown==true && isOutsideStadium(ballPosition) && ((ballPosition.y - outLineY > 20) || (ballPosition.y - outLineY < -20)))
 			{
-				backMSG = false;
+				backFurtherMsgCanBeShown = false;
 				room.sendAnnouncement('<—— DO TYŁU', null, 0xFFFF00, 'normal', 1);
-				trigger = true;
+				isBackFurtherNeeded = true;
 				wrongThrowPosition = true;
 			}
-			if ((ballPosition.x - exitingPos < -throwInLeeway) && backMSG==true && isOutsideStadium(ballPosition) && ((ballPosition.y - outLineY > 20) || (ballPosition.y - outLineY < -20)))
+			if ((ballPosition.x - exitingXPos < -throwInLeeway) && backFurtherMsgCanBeShown==true && isOutsideStadium(ballPosition) && ((ballPosition.y - outLineY > 20) || (ballPosition.y - outLineY < -20)))
 			{
-				backMSG = false;
+				backFurtherMsgCanBeShown = false;
 				room.sendAnnouncement('DO PRZODU ——>', null, 0xFFFF00, 'normal', 1);
-				trigger = true;
+				isBackFurtherNeeded = true;
 				wrongThrowPosition = true;
 			}
 		}
 		if (lastCall=='2')
-		{
-			if ((ballPosition.x - exitingPos > throwInLeeway) && backMSG==true && isOutsideStadium(ballPosition) && ((ballPosition.y - outLineY > 20) || (ballPosition.y - outLineY < -20)))
+		{ // B
+			if ((ballPosition.x - exitingXPos > throwInLeeway) && backFurtherMsgCanBeShown==true && isOutsideStadium(ballPosition) && ((ballPosition.y - outLineY > 20) || (ballPosition.y - outLineY < -20)))
 			{
-				backMSG = false;
+				backFurtherMsgCanBeShown = false;
 				room.sendAnnouncement('<—— DO PRZODU', null, 0xFFFF00, 'normal', 1);
-				trigger = true;
+				isBackFurtherNeeded = true;
 				wrongThrowPosition = true;
 			}
-			if ((ballPosition.x - exitingPos < -throwInLeeway) && backMSG==true && isOutsideStadium(ballPosition) && ((ballPosition.y - outLineY > 20) || (ballPosition.y - outLineY < -20)))
+			if ((ballPosition.x - exitingXPos < -throwInLeeway) && backFurtherMsgCanBeShown==true && isOutsideStadium(ballPosition) && ((ballPosition.y - outLineY > 20) || (ballPosition.y - outLineY < -20)))
 			{
-				backMSG = false;
+				backFurtherMsgCanBeShown = false;
 				room.sendAnnouncement('DO TYŁU ——>', null, 0xFFFF00, 'normal', 1);
-				trigger = true;
+				isBackFurtherNeeded = true;
 				wrongThrowPosition = true;
 			}
 		}
     }
-    if (lastCall=='2' && trigger && isOutsideStadium && Math.abs(exitingPos - ballPosition.x) < throwInLeeway-20)
+    if (lastCall=='2' && isBackFurtherNeeded && isOutsideStadium && Math.abs(exitingXPos - ballPosition.x) < throwInLeeway-20)
     {
         room.sendAnnouncement('OK', null, 0xFFFF00, 'normal', 1);
-        trigger = false;
+        isBackFurtherNeeded = false;
         wrongThrowPosition = false;
-        backMSG = true;
+        backFurtherMsgCanBeShown = true;
     }
-    if (lastCall=='1' && trigger && isOutsideStadium && Math.abs(exitingPos - ballPosition.x) < throwInLeeway-20)
+    if (lastCall=='1' && isBackFurtherNeeded && isOutsideStadium && Math.abs(exitingXPos - ballPosition.x) < throwInLeeway-20)
     {
         room.sendAnnouncement('OK', null, 0xFFFF00, 'normal', 1);
-        trigger = false;
+        isBackFurtherNeeded = false;
         wrongThrowPosition = false;
-        backMSG = true;
+        backFurtherMsgCanBeShown = true;
     }
 }
 
@@ -553,13 +555,13 @@ function isThrowInCorrect() // onGameTick
     {
         room.sendAnnouncement('NIE TA DRUŻYNA', null, 0xFFFF00, 'small', 1);
         wrongThrowPosition = false;
-        trigger = false;
+        isBackFurtherNeeded = false;
     }
 	else if (isCrossing && wrongThrowPosition && LTTstring==lastCall && (lastCall=='1' || lastCall=='2'))
     {
         room.sendAnnouncement('NIE W TYM MIEJSCU', null, 0xFFFF00, 'small', 1);
         wrongThrowPosition = false;
-        trigger = false;
+        isBackFurtherNeeded = false;
     }
 	else if (isCrossing)
     {
@@ -678,9 +680,8 @@ function getDiscCountFun(player)
 
 // Gracz i argumenty
 function adminFun(player, arg)
-{ // !op qwerty
+{ // !op <hasło>
     // Daje wpisującemu admina
-	let adminPassword = 'qwerty'; // HASŁO ADMINISTRATORA
 	if (arg === adminPassword)
 		room.setPlayerAdmin(player.id, true);
     return false;
@@ -750,7 +751,7 @@ function teamBlueNameFun(player, arg)
 }
 
 function loadFun(player, arg)
-{ // !l bounce
+{ // !l rs
 	if (player.admin === true)
 	{
 		arg = ignore(arg);
@@ -994,9 +995,9 @@ room.onGameStop = function(byPlayer)
 	else
 		console.log('Gra przerwana przez: ' + byPlayer.name + '#' + byPlayer.id);
 	isPaused = false;
-	recArrayArray[recordingNumber] = room.stopRecording();
+	replays[replayNumber] = room.stopRecording();
 	isRecording = false;
-	recordingNumber++;
+	replayNumber++;
 }
 
 room.onGamePause = function(byPlayer)
@@ -1028,7 +1029,7 @@ room.onPlayerTeamChange = function(changedPlayer, byPlayer)
 }
 
 room.onPlayerBallKick = function(byPlayer)
-{
+ // KOPNIĘCIE PIŁKI
     let ballPosition = room.getBallPosition();
     if (lastPlayerTouched != null && byPlayer.id != lastPlayerTouched.id)
     { // jeżeli ostatni gracz istnieje i gracz nie jest ostatnim graczem (nie asystuje samemu sobie)
