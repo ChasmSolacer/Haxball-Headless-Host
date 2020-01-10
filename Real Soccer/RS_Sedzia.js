@@ -241,6 +241,11 @@ let locStr =
 		'en': '(og.)',
 		'pl': '(sam.)'
 	},
+	DROPPED_BALL:
+	{
+		'en': 'DROPPED-BALL',
+		'pl': 'RZUT SĘDZIOWSKI'
+	},
 	FAILED:
 	{
 		'en': 'Failed',
@@ -794,6 +799,8 @@ let commands =
     // Admin
 	'!CB': clearBansFun,
 	'!AUTOPOSS': AutoPossSwitchFun,
+	'!DROPPEDBALL': droppedBallFun,
+	'!RZUTSĘDZIOWSKI': droppedBallFun,
 
 	// Admin i argumenty
 	'!TRED': teamRedNameFun,
@@ -914,6 +921,22 @@ function AutoPossSwitchFun(player)
 	else
 		sendLocalizedAnnouncement(['⛔', locStr.NOT_ALLOWED], player.id, 0xFF3300, 'normal', 1);
 	return false;
+}
+
+function droppedBallFun(player)
+{ // !rzutsędziowski
+	// Przydatne, na wypadek bezpowrotnego wybicia piłki poza mapę na mapach power
+	if (player.admin === true)
+	{
+		if (room.getScores() != null)
+		{ // jeżeli gra trwa
+			room.setDiscProperties(0, {x: 0, y: 0}); // umieszczenie piłki na środku boiska
+			sendLocalizedAnnouncement([locStr.DROPPED_BALL, '!'], null, 0xFFFF00, 'bold', 1);
+		}
+	}
+	else
+		sendLocalizedAnnouncement(['⛔', locStr.NOT_ALLOWED], player.id, 0xFF3300, 'normal', 1);
+	return true;
 }
 
 // Admin i argumenty
