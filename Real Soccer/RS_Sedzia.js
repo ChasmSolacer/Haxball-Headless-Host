@@ -24,8 +24,6 @@ c.size,"application/octet-stream"),l=!0);q&&"download"!==e&&(e+=".download");if(
 a]=d["on"+a]});b.write(c);d.abort=function(){b.abort();d.readyState=d.DONE};d.readyState=d.WRITING}),g)}),g)};a.getFile(e,{create:!1},h(function(a){a.remove();b()}),h(function(a){a.code===a.NOT_FOUND_ERR?b():g()}))}),g)}),g)):g()}},b=m.prototype;b.abort=function(){this.readyState=this.DONE;t(this,"abort")};b.readyState=b.INIT=0;b.WRITING=1;b.DONE=2;b.error=b.onwritestart=b.onprogress=b.onwrite=b.onabort=b.onerror=b.onwriteend=null;return function(a,b){return new m(a,b)}}}("undefined"!==typeof self&&
 self||"undefined"!==typeof window&&window||this.content);"undefined"!==typeof module&&null!==module?module.exports=saveAs:"undefined"!==typeof define&&null!==define&&null!=define.amd&&define([],function(){return saveAs});
 
-let locale = 'pl';
-
 let roomName = 'RS z Sędzią';
 let maxPlayers = 20;
 let roomPublic = false;
@@ -98,6 +96,7 @@ let redPossessionTicks = 0;
 let bluePossessionTicks = 0;
 
 let isPaused = false;
+let isRSEnabled = true; // czy ma być sędzia
 
 let ballColor = 0xFFFFFF;
 
@@ -250,6 +249,16 @@ let locStr =
 	{
 		'en': 'Failed',
 		'pl': 'Nie udało się'
+	},
+	REF_CALLED_UP:
+	{
+		'en': 'Called the referee up',
+		'pl': 'Powołano sędziego'
+	},
+	REF_DISMISSED:
+	{
+		'en': 'Dismissed the referee',
+		'pl': 'Odwołano sędziego'
 	}
 }
 
@@ -319,14 +328,14 @@ function reactToBallRadiusChange()
 
 function ignore(string)
 { // do nazw drużyn i map
-	string = string.toLocaleUpperCase(locale); // do WIELKICH LITER
+	string = string.toUpperCase(); // do WIELKICH LITER
 	string = string.replace(/^\s+|\s+$/g,''); // usuwanie spacji na początku i końcu
 	return string;
 }
 
 function oczysc(message)
 { // do wykrywania wulgaryzmów (niewykorzystywana)
-	message = message.toLocaleUpperCase(locale); // do WIELKICH LITER
+	message = message.toUpperCase(); // do WIELKICH LITER
     //message = message.replace(/\s/g, ''); // usuwanie spacji (ale wtedy '5 KUR WAży' to wulgaryzm)
     message = message.replace(/\.|\,|\;|\'|\/|\-|\_|\`|\|/g, ''); // usuwanie znaków int.
 	return message;
@@ -514,7 +523,7 @@ function handleAddedTime() // onGameTick
 }
 
 let isBallOutsideStadium = false;
-function checkBallPosition() // onGameTick
+function reactToOuts() // onGameTick
 { // informuje o autach, rożnych itd.
     let ballPosition = room.getBallPosition();
     if (isOutsideStadium(ballPosition))
@@ -801,6 +810,7 @@ let commands =
 	'!AUTOPOSS': AutoPossSwitchFun,
 	'!DROPPEDBALL': droppedBallFun,
 	'!RZUTSĘDZIOWSKI': droppedBallFun,
+	'!REF': refFun,
 
 	// Admin i argumenty
 	'!TRED': teamRedNameFun,
@@ -937,6 +947,21 @@ function droppedBallFun(player)
 	else
 		sendLocalizedAnnouncement(['⛔', locStr.NOT_ALLOWED], player.id, 0xFF3300, 'normal', 1);
 	return true;
+}
+
+function refFun(player)
+{ // ! ref
+	if (player.admin === true)
+	{
+		if (isRSEnabled)
+			sendLocalizedAnnouncement([locStr.REF_DISMISSED], player.id, 0xFFFF00, 'normal', 1);
+		else
+			sendLocalizedAnnouncement([locStr.REF_CALLED_UP], player.id, 0xFFFF00, 'normal', 1);
+		isRSEnabled = !isRSEnabled;
+	}
+	else
+		sendLocalizedAnnouncement(['⛔', locStr.NOT_ALLOWED], player.id, 0xFF3300, 'normal', 1);
+	return false;
 }
 
 // Admin i argumenty
@@ -1112,17 +1137,21 @@ room.onGameTick = function()
 {
     updatePlayerList();
 	reactToBallRadiusChange();
-	isThrowInCorrect();
-    getLastTouchTheBall();
-    checkBallPosition();
-    isBackRequired();
-    hasBallLeftTheLine();
-    handleAddedTime();
-    displayAddedTime();
+	if (isRSEnabled)
+	{ // kiedy sędzia odzywa się
+		reactToOuts(); // aut, ck, gk
+		isThrowInCorrect(); // zły aut
+		isBackRequired(); // do przodu/tyłu/OK
+		hasBallLeftTheLine(); // ???
+		displayAddedTime(); // wyśw. dolicz. czasu
+	}
+    getLastTouchTheBall(); // kto strzelił/asystował
+	handleAddedTime(); // ile doliczyć
+    
 	if (isAutoPossEnabled)
-		displayPossAutomatically();
+		displayPossAutomatically(); // posiadanie co 5 min
 	
-	// Posiadanie piłki - okresy
+	// Okresy posiadania piłki (1 sekunda to 60 okresów)
 	if (lastTeamTouched == Team.RED)
 		redPossessionTicks++;
 	else if (lastTeamTouched == Team.BLUE)
@@ -1326,8 +1355,8 @@ room.onPlayerChat = function(player, message)
 	let arg = message.substr(command.length + 1, message.length);
 	
 	// komenda ze słownika zamieniona na WIELKIE LITERY
-	if (commands.hasOwnProperty(command.toLocaleUpperCase(locale)) === true)
-		return commands[command.toLocaleUpperCase(locale)](player, arg);
+	if (commands.hasOwnProperty(command.toUpperCase()) === true)
+		return commands[command.toUpperCase()](player, arg);
 }
 
 room.onStadiumChange = function(newStadiumName, byPlayer)
