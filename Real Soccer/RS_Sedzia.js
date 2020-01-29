@@ -95,6 +95,8 @@ let actualTimeAdded;
 let redPossessionTicks = 0;
 let bluePossessionTicks = 0;
 
+let whoScoredList = [];
+
 let isPaused = false;
 let isRSEnabled = true; // czy ma być sędzia
 
@@ -371,6 +373,7 @@ function teamIcon(team)
 
 function sendLocalizedAnnouncement(locArray, id, color, style, sound)
 { // wysłanie wiadomości prywatnych w języku użytkownika
+	// UWAGA: nie są wyświetlane na powtórkach
 	let stringBuilder = '';
 	let debugStr = '';
 	if (id == null)
@@ -788,6 +791,7 @@ let commands =
 { // komendy nie rozróżniają wielkości liter, jeśli któraś zostanie wykryta, jest zamieniana na WIELKIE LITERY
     // Proste
 	'!POSS': possFun,
+	'!WHOSCORED': printScorers,
 	
     // Gracz
 	'!PL': plFun,
@@ -835,6 +839,16 @@ function possFun()
 		sendLocalizedAnnouncement([locStr.BALL_POSS, ': ', redTeamName, ' ', redPossessionPercentage, ' % ', bluePossessionPercentage, ' ', blueTeamName], null, 0xCCFF00, 'normal', 1);
 	else
 		sendLocalizedAnnouncement([locStr.LAST_BALL_POSS, ': ' + redTeamName, ' ', redPossessionPercentage, ' % ', bluePossessionPercentage, ' ', blueTeamName], null, 0xCCFF00, 'normal', 1);
+}
+
+function printScorers()
+{ // !whoscored
+	let output = '▌'
+	whoScoredList.forEach((s) =>
+	{
+		output += (s + ' ▌');
+	});
+	room.sendAnnouncement(output + '', null, 0x00FFFF, 'small', 1); // wyświetlanie na powtórkach
 }
 
 // Gracz
@@ -1227,6 +1241,8 @@ room.onGameStart = function(byPlayer)
 	redPossessionTicks = 0;
 	bluePossessionTicks = 0;
 	
+	whoScoredList = [];
+	
 	room.setDiscProperties(0, {color: ballColor}); // piłka zmienia kolor na ustalony
 	
 	room.startRecording();
@@ -1240,6 +1256,9 @@ room.onGameStop = function(byPlayer)
 	else
 		console.log('Gra przerwana przez: ' + byPlayer.name + '#' + byPlayer.id);
 	isPaused = false;
+	
+	printScorers();
+	
 	replays[replayNumber] = room.stopRecording();
 	isRecording = false;
 	replayNumber++;
@@ -1309,7 +1328,7 @@ room.onTeamGoal = function(team)
 	if (lastPlayerTouched != null)
 	{
 		let ownGoal = isOwnGoal(team, lastPlayerTouched);
-		let assist = '';
+		let assist = ' ';
 		// asysta
 		if (ownGoal === '' && assistingPlayer != null && assistingPlayer.id != lastPlayerTouched.id)
 		{
@@ -1317,7 +1336,9 @@ room.onTeamGoal = function(team)
 		}
 		
 		sendLocalizedAnnouncement(['⚽', teamIcon(team), ' ', time, ' ', lastPlayerTouched.name,
-		assist, ' ', ownGoal], null, 0xFFFF00, 'normal', 1);
+		assist, ownGoal], null, 0xFFFF00, 'normal', 1);
+		
+		whoScoredList.push(teamIcon(team) + ' ' + time + ' ' + lastPlayerTouched.name + assist + (ownGoal!=''?ownGoal.pl:''));
 	}
 	else
 	{
