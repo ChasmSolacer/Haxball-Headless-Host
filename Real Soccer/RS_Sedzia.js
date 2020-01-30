@@ -319,6 +319,19 @@ function saveReplay(replayNumber)
 	saveFile(replays[replayNumber], 'Powtórka' + replayNumber + '.hbr2');
 }
 
+function startRecording()
+{
+	room.startRecording();
+	isRecording = true;
+}
+
+function stopRecording()
+{
+	replays[replayNumber] = room.stopRecording();
+	isRecording = false;
+	replayNumber++;
+}
+
 function reactToBallRadiusChange()
 {
 	ballRadius = room.getDiscProperties(0).radius;
@@ -1245,8 +1258,7 @@ room.onGameStart = function(byPlayer)
 	
 	room.setDiscProperties(0, {color: ballColor}); // piłka zmienia kolor na ustalony
 	
-	room.startRecording();
-	isRecording = true;
+	setTimeout(startRecording, 500);
 }
 
 room.onGameStop = function(byPlayer)
@@ -1259,9 +1271,7 @@ room.onGameStop = function(byPlayer)
 	
 	printScorers();
 	
-	replays[replayNumber] = room.stopRecording();
-	isRecording = false;
-	replayNumber++;
+	setTimeout(stopRecording, 500);
 }
 
 room.onGamePause = function(byPlayer)
