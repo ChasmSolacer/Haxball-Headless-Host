@@ -100,7 +100,7 @@ let whoScoredList = [];
 let isPaused = false;
 let isRSEnabled = true; // czy ma być sędzia
 
-let ballColor = 0xFFFFFF;
+let ballColor = NaN;
 
 // Mapy
 let maps = 
@@ -224,13 +224,18 @@ let locStr =
 	},
 	QUIET_E:
 	{
-		'en': 'Quiet e',
+		'en': 'stfu e',
 		'pl': 'Cicho e'
 	},
 	BALL_COLOR_CHANGED_TO:
 	{
 		'en': 'Ball color changed to',
 		'pl': 'Zmieniono kolor piłki na'
+	},
+	BALL_COLOR_CHANGE_SUSPENDED:
+	{
+		'en': 'Ball color will change to default after a goal or new game',
+		'pl': 'Kolor piłki zmieni się na pierwotny po bramce lub nowej grze'
 	},
 	BAN_AFTERMATH:
 	{
@@ -351,7 +356,7 @@ function ignore(string)
 function oczysc(message)
 { // do wykrywania wulgaryzmów (niewykorzystywana)
 	message = message.toUpperCase(); // do WIELKICH LITER
-    //message = message.replace(/\s/g, ''); // usuwanie spacji (ale wtedy '5 KUR WAży' to wulgaryzm)
+    //message = message.replace(/\s/g, ''); // usuwanie spacji (rosół z KUR Wielu' to wulgaryzm)
     message = message.replace(/\.|\,|\;|\'|\/|\-|\_|\`|\|/g, ''); // usuwanie znaków int.
 	return message;
 }
@@ -404,7 +409,7 @@ function sendLocalizedAnnouncement(locArray, id, color, style, sound)
 			debugStr = stringBuilder;
 			stringBuilder = '';
 		});
-		console.log('▌ ' + debugStr);
+		console.log('▌ %c' + debugStr, 'color:'+'#'+('00000'+color.toString(16)).substr(-6)); // kolory w konsoli są zachowane
 	}
 	else
 	{ // prywatna
@@ -1034,7 +1039,7 @@ function eFun(player, arg)
 { // !e
 	if (player.admin === true)
 	{
-		sendLocalizedAnnouncement([player.name + ': ' + arg], null, 0xCC55FF, 'bold', 2);
+		sendLocalizedAnnouncement([player.name + ': ' + arg], null, 0xCC99FF, 'bold', 2);
 	}
 	else
 		sendLocalizedAnnouncement([locStr.QUIET_E], player.id, 0xFFCC00, 'normal', 1);
@@ -1131,12 +1136,21 @@ function setBallFun(player, arg)
 }
 
 function setStableBallColorFun(player, arg)
-{ // !ballcolor 0xffffff
+{ // !ballcolor 0xffffff - koloruje piłkę na kolor 0xffffff (biały) na stałe
+  // !ballcolor - czyni piłkę przezroczystą i umożliwia zresetowanie koloru po bramce lub nowej grze	
 	if (player.admin === true)
 	{
 		ballColor = parseInt(arg);
-		room.setDiscProperties(0, {color: ballColor});
-		sendLocalizedAnnouncement([locStr.BALL_COLOR_CHANGED_TO, ': ' + ballColor], player.id, 0xFFFF00, 'normal', 1);
+		if (isNaN(ballColor)) // gdy kolor nie jest liczbą
+		{
+			room.setDiscProperties(0, {color: -1}); // kulka przezroczysta
+			sendLocalizedAnnouncement([locStr.BALL_COLOR_CHANGE_SUSPENDED], null, 0xFFFF00, 'normal', 1);
+		}
+		else
+		{
+			room.setDiscProperties(0, {color: ballColor});
+			sendLocalizedAnnouncement([locStr.BALL_COLOR_CHANGED_TO, ': ' + ballColor], null, 0xFFFF00, 'normal', 1);
+		}
 	}
 	else
 		sendLocalizedAnnouncement(['⛔', locStr.NOT_ALLOWED], player.id, 0xFF3300, 'normal', 1);
@@ -1147,7 +1161,7 @@ function setStableBallColorFun(player, arg)
 */
 room.onPlayerJoin = function(player)
 {
-    console.log(player.name + '#' + player.id + ' wchodzi');
+    console.log('%c' + player.name + '#' + player.id + ' wchodzi', 'color: green');
 	updatePlayerList();
 	initBijacze(player);
 	setPlayerLanguage(player, 'pl');
@@ -1155,7 +1169,7 @@ room.onPlayerJoin = function(player)
 
 room.onPlayerLeave = function(player)
 {
-	console.log(player.name + '#' + player.id + ' wychodzi');
+	console.log('%c' + player.name + '#' + player.id + ' wychodzi', 'color: orange');
 	updatePlayerList();
 }
 
@@ -1192,10 +1206,10 @@ room.onPlayerKicked = function(kickedPlayer, reason, ban, byPlayer)
 	if (ban)
 	{
 		if (byPlayer == null)
-			console.log(kickedPlayer.name + '#' + kickedPlayer.id + ' ZBANOWANY (' + reason + ')');
+			console.log('%c' + kickedPlayer.name + '#' + kickedPlayer.id + ' ZBANOWANY (' + reason + ')', 'color: salmon');
 		else
-			console.log(kickedPlayer.name + '#' + kickedPlayer.id + ' ZBANOWANY przez: '
-			+ byPlayer.name + '#' + byPlayer.id + ' (' + reason + ')');
+			console.log('%c' + kickedPlayer.name + '#' + kickedPlayer.id + ' ZBANOWANY przez: '
+			+ byPlayer.name + '#' + byPlayer.id + ' (' + reason + ')', 'color: salmon');
 		// Banowanie nie samego siebie i nie przez sędziego
 		if (byPlayer.id !== kickedPlayer.id && byPlayer.id !== 0 && byPlayer != null)
 		{
@@ -1207,10 +1221,10 @@ room.onPlayerKicked = function(kickedPlayer, reason, ban, byPlayer)
 	else
 	{
 		if (byPlayer == null)
-			console.log(kickedPlayer.name + '#' + kickedPlayer.id + ' wykopany (' + reason + ')');
+			console.log('%c' + kickedPlayer.name + '#' + kickedPlayer.id + ' wykopany (' + reason + ')', 'color: salmon');
 		else
-			console.log(kickedPlayer.name + '#' + kickedPlayer.id + ' wykopany przez: '
-			+ byPlayer.name + '#' + byPlayer.id + ' (' + reason + ')');
+			console.log('%c' + kickedPlayer.name + '#' + kickedPlayer.id + ' wykopany przez: '
+			+ byPlayer.name + '#' + byPlayer.id + ' (' + reason + ')', 'color: salmon');
 	}
 }
 
@@ -1221,27 +1235,27 @@ room.onPlayerAdminChange = function(changedPlayer, byPlayer)
 	if (changedPlayer.admin)
 	{
 		if (byPlayer == null)
-			console.log(changedPlayer.name + '#' + changedPlayer.id + ' uzyskuje admina');
+			console.log('%c' + changedPlayer.name + '#' + changedPlayer.id + ' uzyskuje admina', 'color: olive');
 		else
-			console.log(changedPlayer.name + '#' + changedPlayer.id + ' uzyskuje admina od: '
-			+ byPlayer.name + '#' + byPlayer.id);
+			console.log('%c' + changedPlayer.name + '#' + changedPlayer.id + ' uzyskuje admina od: '
+			+ byPlayer.name + '#' + byPlayer.id, 'color: olive');
 	}
 	else
 	{
 		if (byPlayer == null)
-			console.log(changedPlayer.name + '#' + changedPlayer.id + ' TRACI admina');
+			console.log('%c' + changedPlayer.name + '#' + changedPlayer.id + ' TRACI admina', 'color: olive');
 		else
-			console.log(changedPlayer.name + '#' + changedPlayer.id + ' TRACI admina przez: '
-			+ byPlayer.name + '#' + byPlayer.id);
+			console.log('%c' + changedPlayer.name + '#' + changedPlayer.id + ' TRACI admina przez: '
+			+ byPlayer.name + '#' + byPlayer.id, 'color: olive');
 	}
 }
 
 room.onGameStart = function(byPlayer)
 {
     if (byPlayer == null)
-		console.log('Gra rozpoczęta');
+		console.log('%c' + 'Gra rozpoczęta', 'color: royalblue');
 	else
-		console.log('Gra rozpoczęta przez: ' + byPlayer.name + '#' + byPlayer.id);
+		console.log('%c' + 'Gra rozpoczęta przez: ' + byPlayer.name + '#' + byPlayer.id, 'color: royalblue');
 	
 	reactToBallRadiusChange();
 	lastTeamTouched = 0;
@@ -1256,7 +1270,8 @@ room.onGameStart = function(byPlayer)
 	
 	whoScoredList = [];
 	
-	room.setDiscProperties(0, {color: ballColor}); // piłka zmienia kolor na ustalony
+	if (!isNaN(ballColor))
+		room.setDiscProperties(0, {color: ballColor}); // piłka zmienia kolor na ustalony
 	
 	setTimeout(startRecording, 500);
 }
@@ -1264,9 +1279,9 @@ room.onGameStart = function(byPlayer)
 room.onGameStop = function(byPlayer)
 {
 	if (byPlayer == null)
-		console.log('Gra przerwana');
+		console.log('%c' + 'Gra przerwana', 'color: royalblue');
 	else
-		console.log('Gra przerwana przez: ' + byPlayer.name + '#' + byPlayer.id);
+		console.log('%c' + 'Gra przerwana przez: ' + byPlayer.name + '#' + byPlayer.id, 'color: royalblue');
 	isPaused = false;
 	
 	printScorers();
@@ -1277,18 +1292,18 @@ room.onGameStop = function(byPlayer)
 room.onGamePause = function(byPlayer)
 {
     if (byPlayer == null)
-		console.log('Gra zatrzymana');
+		console.log('%c' + '⏸Gra zatrzymana', 'color: royalblue');
 	else
-		console.log('Gra zatrzywana przez: ' + byPlayer.name + '#' + byPlayer.id);
+		console.log('%c' + '⏸Gra zatrzywana przez: ' + byPlayer.name + '#' + byPlayer.id, 'color: royalblue');
 	isPaused = true;
 }
 
 room.onGameUnpause = function(byPlayer)
 {
     if (byPlayer == null)
-		console.log('Gra wznowiona');
+		console.log('%c' + '⏯Gra wznowiona', 'color: royalblue');
 	else
-		console.log('Gra wznowiona przez: ' + byPlayer.name + '#' + byPlayer.id);
+		console.log('%c' + '⏯Gra wznowiona przez: ' + byPlayer.name + '#' + byPlayer.id, 'color: royalblue');
 	isPaused = false;
 }
 
@@ -1296,10 +1311,10 @@ room.onGameUnpause = function(byPlayer)
 room.onPlayerTeamChange = function(changedPlayer, byPlayer)
 {
     if (byPlayer == null)
-		console.log(changedPlayer.name + '#' + changedPlayer.id + ' zmienia stronę');
+		console.log('%c' + changedPlayer.name + '#' + changedPlayer.id + ' zmienia stronę', 'color: grey');
 	else
-		console.log(changedPlayer.name + '#' + changedPlayer.id + ' zmienia stronę przez: '
-		+ byPlayer.name + '#' + byPlayer.id);
+		console.log('%c' + changedPlayer.name + '#' + changedPlayer.id + ' zmienia stronę przez: '
+		+ byPlayer.name + '#' + byPlayer.id, 'color: grey');
 }
 
 room.onPlayerBallKick = function(byPlayer)
@@ -1359,7 +1374,8 @@ room.onTeamGoal = function(team)
 room.onPositionsReset = function()
 {
 	reactToBallRadiusChange();
-	room.setDiscProperties(0, {color: ballColor}); // piłka zmienia kolor na ustalony
+	if (!isNaN(ballColor))
+		room.setDiscProperties(0, {color: ballColor}); // piłka zmienia kolor na ustalony
 }
 
 room.onTeamVictory = function(scores)
@@ -1393,9 +1409,9 @@ room.onPlayerChat = function(player, message)
 room.onStadiumChange = function(newStadiumName, byPlayer)
 {
     if (byPlayer == null)
-		console.log('Stadion zmieniony na: ' + newStadiumName);
+		console.log('%c' + '🌐Stadion zmieniony na: ' + newStadiumName, 'color: fuchsia');
 	else
-		console.log('Stadion zmieniony na: ' + newStadiumName + ' przez: ' + byPlayer.name);
+		console.log('%c' + '🌐Stadion zmieniony na: ' + newStadiumName + ' przez: ' + byPlayer.name, 'color: fuchsia');
 }
 
 room.onRoomLink = function(url)
