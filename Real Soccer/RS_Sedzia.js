@@ -96,6 +96,7 @@ let redPossessionTicks = 0;
 let bluePossessionTicks = 0;
 
 let whoScoredList = [];
+let allScores = [];
 
 let isPaused = false;
 let isRSEnabled = true; // czy ma być sędzia
@@ -317,12 +318,13 @@ function saveFile(data, filename)
 	saveAs(blob, filename);
 }
 
-let replays = new Array();
+let replays = [];
+let rNames = [];
 let isRecording = false;
 let replayNumber = 0;
 function saveReplay(replayNumber)
 { // Zapis powtórki
-	saveFile(replays[replayNumber], 'Powtórka' + replayNumber + '.hbr2');
+	saveFile(replays[replayNumber], '#' + replayNumber + ' ' + rNames[replayNumber] + '.hbr2');
 }
 
 function startRecording()
@@ -334,6 +336,7 @@ function startRecording()
 function stopRecording()
 {
 	replays[replayNumber] = room.stopRecording();
+	rNames[replayNumber] = redTeamName.substring(redTeamPrefix.length) + ' ' + allScores[replayNumber] + ' ' + blueTeamName.substring(blueTeamPrefix.length);
 	isRecording = false;
 	replayNumber++;
 }
@@ -1275,6 +1278,7 @@ room.onGameStart = function(byPlayer)
 		room.setDiscProperties(0, {color: ballColor}); // piłka zmienia kolor na ustalony
 	
 	setTimeout(startRecording, 500);
+	allScores.push('0-0');
 }
 
 room.onGameStop = function(byPlayer)
@@ -1370,6 +1374,8 @@ room.onTeamGoal = function(team)
 	{
 		sendLocalizedAnnouncement(['⚽', teamIcon(team), ' ', time, ' '], null, 0xFFFF00, 'normal', 1);
 	}
+	
+	allScores[replayNumber] = room.getScores().red + '-' + room.getScores().blue;
 }
 
 room.onPositionsReset = function()
