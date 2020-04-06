@@ -39,7 +39,6 @@ let baseStadiumHeight = 600;
 let stadiumWidth = 1150;
 let stadiumHeight = 600;
 let ballRadius = 9.8;
-let isBackFurtherNeededDistance;
 let outLineY;
 let throwInLeeway = 350; // dozwolone odchylenie w poziomie przy wyrzucie z autu
 let greenLine = 510; // punkt, w którym gracz jest styczny z linią boczną
@@ -50,7 +49,6 @@ let cornerRightUpPos = {x: 1150, y: -600};
 let cornerRightDownPos = {x: 1150, y: 600};
 
 /* USTAWIENIA */
-isBackFurtherNeededDistance = ballRadius + 15 + 0.01;
 outLineY = stadiumWidth - (ballRadius / 2) + 6; // 1150 - 9.8/2 + 6 = 1152.1
 stadiumWidth = baseStadiumWidth + (ballRadius / 2) + 6; // 1150 + 9.8/2 + 6 = 1160.9
 stadiumHeight = baseStadiumHeight + (ballRadius / 2) + 6; // 600 + 4.9 + 6 = 610.9
@@ -344,7 +342,6 @@ function stopRecording()
 function reactToBallRadiusChange()
 {
 	ballRadius = room.getDiscProperties(0).radius;
-	isBackFurtherNeededDistance = ballRadius + 15 + 0.01;
 	outLineY = stadiumWidth - (ballRadius / 2) + 6;
 	stadiumWidth = baseStadiumWidth + (ballRadius / 2) + 6;
 	stadiumHeight = baseStadiumHeight + (ballRadius / 2) + 6;
@@ -611,9 +608,10 @@ function getDistanceBetweenPoints(point1, point2)
 
 function isTouchingBall(player)
 { // czy gracz dotyka piłkę
+	let playerRadius = room.getPlayerDiscProperties(player.id).radius;
 	let ballPosition = room.getBallPosition();
 	let distancePlayerToBall = getDistanceBetweenPoints(player.position, ballPosition);
-	return distancePlayerToBall < isBackFurtherNeededDistance;
+	return distancePlayerToBall < ballRadius + playerRadius + 0.01;
 }
 
 function getLastTouchTheBall() // onGameTick
