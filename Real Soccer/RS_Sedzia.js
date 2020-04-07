@@ -68,6 +68,7 @@ let blueTeamName = blueTeamPrefix;
 
 let bijacze = new Map(); // kto i ile razy banował innych graczy (niewykorzystywana)
 let playerLang = new Map(); // ustawienia języka gracza
+let moreInfo = new Map();
 
 let lastScores = 0;
 let lastTeamTouched = 0;
@@ -1167,6 +1168,7 @@ room.onPlayerJoin = function(player)
 	updatePlayerList();
 	initBijacze(player);
 	setPlayerLanguage(player, 'pl');
+	moreInfo[player.id] = {name: player.name, auth: player.auth, conn: player.conn};
 }
 
 room.onPlayerLeave = function(player)
