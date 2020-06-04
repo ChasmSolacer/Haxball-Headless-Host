@@ -24,29 +24,30 @@ c.size,"application/octet-stream"),l=!0);q&&"download"!==e&&(e+=".download");if(
 a]=d["on"+a]});b.write(c);d.abort=function(){b.abort();d.readyState=d.DONE};d.readyState=d.WRITING}),g)}),g)};a.getFile(e,{create:!1},h(function(a){a.remove();b()}),h(function(a){a.code===a.NOT_FOUND_ERR?b():g()}))}),g)}),g)):g()}},b=m.prototype;b.abort=function(){this.readyState=this.DONE;t(this,"abort")};b.readyState=b.INIT=0;b.WRITING=1;b.DONE=2;b.error=b.onwritestart=b.onprogress=b.onwrite=b.onabort=b.onerror=b.onwriteend=null;return function(a,b){return new m(a,b)}}}("undefined"!==typeof self&&
 self||"undefined"!==typeof window&&window||this.content);"undefined"!==typeof module&&null!==module?module.exports=saveAs:"undefined"!==typeof define&&null!==define&&null!=define.amd&&define([],function(){return saveAs});
 
-let roomName = 'RS z Sędzią';
-let maxPlayers = 20;
-let roomPublic = false;
-let playerName = 'SĘDZIA';
-let code = 'PL'; // Polska
-let lat = 52;
-let lon = 19;
+const roomName = 'RS z Sędzią';
+const maxPlayers = 22;
+const roomPublic = false;
+const playerName = 'SĘDZIA';
+const code = 'PL'; // Polska
+const lat = 52;
+const lon = 19;
+const hostHidden = true; // SĘDZIA nie będzie widoczny w pokoju
 
-/* STADION */
+/* STADION RS */
 // Wartości dotyczą boiska na którym rozgrywany jest mecz - wartości domyślne to oficjalna mapa RS
-let baseStadiumWidth = 1150;
-let baseStadiumHeight = 600;
+const baseStadiumWidth = 1150;
+const baseStadiumHeight = 600;
 let stadiumWidth = 1150;
 let stadiumHeight = 600;
 let ballRadius = 9.8;
 let outLineY;
-let throwInLeeway = 350; // dozwolone odchylenie w poziomie przy wyrzucie z autu
-let greenLine = 510; // punkt, w którym gracz jest styczny z linią boczną
-let cornerPenaltyRadius = 330; // najmniejsza odległość od gracza do rogu, w której gracz nie przekracza łuku
-let cornerLeftUpPos = {x: -1150, y: -600};
-let cornerLeftDownPos = {x: -1150, y: 600};
-let cornerRightUpPos = {x: 1150, y: -600};
-let cornerRightDownPos = {x: 1150, y: 600};
+const throwInLeeway = 350; // dozwolone odchylenie w poziomie przy wyrzucie z autu
+const greenLine = 510; // punkt, w którym gracz jest styczny z linią boczną
+const cornerPenaltyRadius = 265; // najmniejsza odległość od gracza do rogu, w której gracz nie przekracza łuku
+const cornerLeftUpCenter = {x: -1135, y: -550};
+const cornerLeftDownCenter = {x: -1135, y: 550};
+const cornerRightUpCenter = {x: 1135, y: -550};
+const cornerRightDownCenter = {x: 1135, y: 550};
 
 /* USTAWIENIA */
 outLineY = stadiumWidth - (ballRadius / 2) + 6; // 1150 - 9.8/2 + 6 = 1152.1
@@ -57,9 +58,9 @@ let players = null;
 let population = 0;
 let Team =
 {
-    SPECTATORS: 0,
-    RED: 1,
-    BLUE: 2
+	SPECTATORS: 0,
+	RED: 1,
+	BLUE: 2
 };
 let redTeamPrefix = '[' + teamIcon(Team.RED) + 'R] ';
 let blueTeamPrefix = '[' + teamIcon(Team.BLUE) + 'B] ';
@@ -110,19 +111,34 @@ let maps =
 	'PENS QUICK': '{"name":"Penalty 1.1 Mod","width":420,"height":200,"bg":{"type":"grass","width":500,"height":250,"kickOffRadius":10},"vertexes":[{"x":420,"y":600,"cMask":["ball"]},{"x":420,"y":-600,"cMask":["ball"]},{"x":283,"y":500,"bCoef":0,"cMask":["blue"]},{"x":283,"y":-500,"bCoef":0,"cMask":["blue"]},{"x":335,"y":500,"bCoef":0,"cMask":["blue"]},{"x":335,"y":-500,"bCoef":0,"cMask":["blue"]},{"x":-475,"y":-200,"bCoef":0,"cMask":["red"]},{"x":-10,"y":-190,"bCoef":0,"cMask":["red"]},{"x":-10,"y":190,"bCoef":0,"cMask":["red"]},{"x":-475,"y":200,"bCoef":0,"cMask":["red"]},{"x":300,"y":-250,"cMask":[]},{"x":300,"y":250,"cMask":[]},{"x":0,"y":9,"cMask":[]},{"x":0,"y":-9,"cMask":[]},{"x":0,"y":9,"cMask":[]},{"x":0,"y":-9,"cMask":[]},{"x":175,"y":-175,"cMask":[]},{"x":300,"y":-175,"cMask":[]},{"x":175,"y":175,"cMask":[]},{"x":300,"y":175,"cMask":[]},{"x":-120,"y":-250,"cMask":[]},{"x":-120,"y":250,"cMask":[]},{"x":-120,"y":-190,"cMask":[]},{"x":-120,"y":190,"cMask":[]},{"x":300,"y":-100,"cMask":[]},{"x":350,"y":-98,"cMask":[]},{"x":350,"y":98,"cMask":[]},{"x":300,"y":100,"cMask":[]},{"x":0,"y":-15,"bCoef":-2.4,"cMask":["ball"]},{"x":0,"y":15,"bCoef":-2.4,"cMask":["ball"]},{"x":400,"y":-135,"cMask":[]},{"x":400,"y":135,"cMask":[]}],"segments":[{"v0":0,"v1":1,"vis":false,"cMask":["ball"]},{"v0":2,"v1":3,"bCoef":0,"vis":false,"cMask":["blue"]},{"v0":4,"v1":5,"bCoef":0,"vis":false,"cMask":["blue"]},{"v0":6,"v1":7,"bCoef":0,"vis":false,"cMask":["red"]},{"v0":7,"v1":8,"bCoef":0,"curve":50,"curveF":2.1445069205095586,"vis":false,"cMask":["red"]},{"v0":8,"v1":9,"bCoef":0,"vis":false,"cMask":["red"]},{"v0":9,"v1":6,"bCoef":0,"vis":false,"cMask":["red"]},{"v0":10,"v1":11,"cMask":[],"color":"C7E6BD"},{"v0":13,"v1":12,"curve":180,"curveF":6.123233995736766e-17,"cMask":[],"color":"C7E6BD"},{"v0":14,"v1":15,"curve":180,"curveF":6.123233995736766e-17,"cMask":[],"color":"C7E6BD"},{"v0":16,"v1":17,"cMask":[],"color":"C7E6BD"},{"v0":16,"v1":18,"cMask":[],"color":"C7E6BD"},{"v0":18,"v1":19,"cMask":[],"color":"C7E6BD"},{"v0":20,"v1":21,"cMask":[],"color":"C7E6BD"},{"v0":23,"v1":22,"curve":140,"curveF":0.36397023426620245,"cMask":[],"color":"C7E6BD"},{"v0":24,"v1":25,"bCoef":0.1,"curve":10,"curveF":11.430052302761343,"cMask":["red","blue","ball"],"color":"C7E6BD"},{"v0":25,"v1":26,"bCoef":0.1,"curve":10,"curveF":11.430052302761343,"cMask":["red","blue","ball"],"color":"C7E6BD"},{"v0":26,"v1":27,"bCoef":0.1,"curve":10,"curveF":11.430052302761343,"cMask":["red","blue","ball"],"color":"C7E6BD"},{"v0":28,"v1":29,"bCoef":-2.4,"curve":180,"curveF":6.123233995736766e-17,"vis":false,"cMask":["ball"],"color":"C7E6BD"},{"v0":25,"v1":30,"cMask":[],"color":"C7E6BD"},{"v0":26,"v1":31,"cMask":[],"color":"C7E6BD"}],"planes":[{"normal":[0,1],"dist":-200,"cMask":["ball"]},{"normal":[0,-1],"dist":-200,"cMask":["ball"]},{"normal":[0,1],"dist":-250,"bCoef":0.1},{"normal":[0,-1],"dist":-250,"bCoef":0.1},{"normal":[1,0],"dist":-400,"bCoef":0.1},{"normal":[-1,0],"dist":-400,"bCoef":0.1}],"goals":[{"p0":[310,100],"p1":[310,-100],"team":"blue"},{"p0":[300,100],"p1":[-400,100],"team":"red"},{"p0":[300,-100],"p1":[-400,-100],"team":"red"},{"p0":[-10,250],"p1":[-10,-250],"team":"red"}],"discs":[{"cGroup":["ball","kick","score"]},{"pos":[300,100],"radius":5,"bCoef":1.3,"invMass":0},{"pos":[300,-100],"radius":5,"bCoef":1.3,"invMass":0},{"pos":[400,-135],"radius":3,"bCoef":1,"invMass":0},{"pos":[400,135],"radius":3,"bCoef":1,"invMass":0}],"playerPhysics":{},"ballPhysics":"disc0","spawnDistance":300}'
 };
 
+// Tworzenie pokoju
+let room = HBInit(
+{
+	roomName: roomName
+	, maxPlayers: maxPlayers
+	, public: roomPublic
+	, playerName: playerName
+	, geo: {'code': code, 'lat': lat, 'lon': lon}
+	, noPlayer: hostHidden
+});
+room.setTeamsLock(false);
+room.setScoreLimit(0);
+room.setTimeLimit(0);
+room.setCustomStadium(maps['RS']);
+
 // Przetłumaczalne teksty
 let locStr =
 {
-    GK:
-    {
-        'en': 'Goal kick -',
-        'pl': 'Od bramki'
-    },
+	GK:
+	{
+		'en': 'Goal kick -',
+		'pl': 'Od bramki'
+	},
 	CK:
-    {
-        'en': 'Corner kick -',
-        'pl': 'Rzut rożny dla'
-    },
+	{
+		'en': 'Corner kick -',
+		'pl': 'Rzut rożny dla'
+	},
 	OUT:
 	{
 		'en': 'Throw-in -',
@@ -270,21 +286,6 @@ let locStr =
 	}
 }
 
-// Tworzenie pokoju
-let room = HBInit(
-{
-	roomName: roomName
-	, maxPlayers: maxPlayers
-	, public: roomPublic
-	, playerName: playerName
-	, geo: {'code': code, 'lat': lat, 'lon': lon}
-	, noPlayer: true // SĘDZIA nie będzie widoczny w pokoju
-});
-room.setTeamsLock(false);
-room.setScoreLimit(0);
-room.setTimeLimit(0);
-room.setCustomStadium(maps['RS']);
-
 /*
     ****************************** Wyciąganie graczy ******************************
 */
@@ -313,7 +314,7 @@ function getIdByPlayerName(name)
 */
 function saveFile(data, filename)
 { // Zapis danych do pliku
-    let blob = new Blob([data], {type: "text/plain;charset=utf-8"});
+	let blob = new Blob([data], {type: "text/plain;charset=utf-8"});
 	saveAs(blob, filename);
 }
 
@@ -351,21 +352,21 @@ function reactToBallRadiusChange()
 function ignore(string)
 { // do nazw drużyn i map
 	string = string.toUpperCase(); // do WIELKICH LITER
-	string = string.replace(/^\s+|\s+$/g,''); // usuwanie spacji na początku i końcu
+	string = string.replace(/^\s+|\s+$/g, ''); // usuwanie spacji na początku i końcu
 	return string;
 }
 
 function oczysc(message)
 { // do wykrywania wulgaryzmów (niewykorzystywana)
 	message = message.toUpperCase(); // do WIELKICH LITER
-    //message = message.replace(/\s/g, ''); // usuwanie spacji (rosół z KUR Wielu' to wulgaryzm)
-    message = message.replace(/\.|\,|\;|\'|\/|\-|\_|\`|\|/g, ''); // usuwanie znaków int.
+	//message = message.replace(/\s/g, ''); // usuwanie spacji (rosół z KUR Wielu' to wulgaryzm)
+	message = message.replace(/\.|\,|\;|\'|\/|\-|\_|\`|\|/g, ''); // usuwanie znaków int.
 	return message;
 }
 
 function updatePlayerList() // onPlayerJoin/Leave
 { // wywołanie przy wchodzeniu/wychodzeniu
-    players = room.getPlayerList(); // gracze
+	players = room.getPlayerList(); // gracze
 	population = players.length;
 }
 
@@ -400,7 +401,7 @@ function sendLocalizedAnnouncement(locArray, id, color, style, sound)
 	{ // do wszystkich
 		players.forEach(player =>
 		{
-			locArray.forEach(str => 
+			locArray.forEach(str =>
 			{
 				if (str.constructor() != '[object Object]')
 					stringBuilder += str; // normalny tekst
@@ -411,11 +412,11 @@ function sendLocalizedAnnouncement(locArray, id, color, style, sound)
 			debugStr = stringBuilder;
 			stringBuilder = '';
 		});
-		console.log('▌ %c' + debugStr, 'color:'+'#'+('00000'+color.toString(16)).substr(-6) + ';background-color:#0007'); // kolory w konsoli są zachowane
+		console.log('▌ %c' + debugStr, 'color:' + '#' + ('00000' + color.toString(16)).substr(-6) + ';background-color:#0007'); // kolory w konsoli są zachowane
 	}
 	else
 	{ // prywatna
-		locArray.forEach(str => 
+		locArray.forEach(str =>
 		{
 			if (str.constructor() == '')
 				stringBuilder += str; // normalny tekst
@@ -430,26 +431,26 @@ let previousBallPosForGoingUp;
 let currentBallPosForGoingUp;
 function isBallGoingUp() // niewykorzystywana
 {
-    previousBallPosForGoingUp = currentBallPosForGoingUp;
-    currentBallPosForGoingUp = room.getBallPosition().y;
-    if (previousBallPosForGoingUp - currentBallPosForGoingUp > 0.01)
-        isBallUp = 2;
+	previousBallPosForGoingUp = currentBallPosForGoingUp;
+	currentBallPosForGoingUp = room.getBallPosition().y;
+	if (previousBallPosForGoingUp - currentBallPosForGoingUp > 0.01)
+		isBallUp = 2;
 	else if (previousBallPosForGoingUp - currentBallPosForGoingUp < -0.01)
-        isBallUp = 1;
+		isBallUp = 1;
 	else
-        isBallUp = 0;
+		isBallUp = 0;
 }
 
 function displayAddedTime() // onGameTick
 { // doliczony czas
-    let scores = room.getScores();
+	let scores = room.getScores();
 	let timeLimit = scores.timeLimit;
 	let isDraw = scores.red == scores.blue;
 	if (timeLimit > 0)
 	{ // skończony czas
-		if (scores.time > timeLimit-20 && isDraw && !isTimeAddedShown)
+		if (scores.time > timeLimit - 20 && isDraw && !isTimeAddedShown)
 		{ // 20s przed końcem i nie pokazano wcześniej
-			actualTimeAdded = Math.round(timeOutside/60 / 2); // 20/2=10s
+			actualTimeAdded = Math.round(timeOutside / 60 / 2); // 20/2=10s
 			if (actualTimeAdded < 60 && actualTimeAdded > -1)
 			{
 				sendLocalizedAnnouncement(['+00:' + leadingZero(actualTimeAdded)], null, 0x88FFAA, 'bold', 1);
@@ -465,11 +466,11 @@ function displayAddedTime() // onGameTick
 			isTimeAddedShown = true; // już pokazano
 		}
 	}
-    else
+	else
 	{ // limit playTimeInMinutes = 20 minut
-		if (scores.time > playTimeInMinutes*60-20 && !isTimeAddedShown)
+		if (scores.time > playTimeInMinutes * 60 - 20 && !isTimeAddedShown)
 		{ // 20s przed upływem 20 minut i nie pokazano wcześniej
-			actualTimeAdded = Math.round(timeOutside/60 / 8); // piłka przebywa poza boiskiem średnio przez 25% czasu gry, stąd dzielenie przez 8, żeby nie doliczać za dużo
+			actualTimeAdded = Math.round(timeOutside / 60 / 8); // piłka przebywa poza boiskiem średnio przez 25% czasu gry, stąd dzielenie przez 8, żeby nie doliczać za dużo
 			if (actualTimeAdded < 60 && actualTimeAdded > -1)
 			{
 				sendLocalizedAnnouncement(['+00:' + leadingZero(actualTimeAdded)], null, 0x88FF88, 'bold', 1);
@@ -492,19 +493,19 @@ function displayPossAutomatically() // onGameTick()
 	let scores = room.getScores();
 	let timeLimit = scores.timeLimit;
 	let trimmedTime = Math.floor(scores.time); // czas w sekundach zaokrąglony w dół
-	if (trimmedTime > 0 && trimmedTime < playTimeInMinutes*60)
+	if (trimmedTime > 0 && trimmedTime < playTimeInMinutes * 60)
 	{ // gra rozpoczęła się i jest przed 20. minutą
-		if (trimmedTime % (autoPossIntervalInMinutes*60) === 0 && isAutoPossShown === false)
+		if (trimmedTime % (autoPossIntervalInMinutes * 60) === 0 && isAutoPossShown === false)
 		{ // co 5 minut i nie wyświetlono przed chwilą
 			possFun(); // wyświetlanie posiadania piłki
 			isAutoPossShown = true; // już wyświetlono
 		}
-		if (trimmedTime % (autoPossIntervalInMinutes*60) > 0)
+		if (trimmedTime % (autoPossIntervalInMinutes * 60) > 0)
 		{ // czas już nie jest wielokrotnością 5 minut
 			isAutoPossShown = false; // można pokazać przypomnienie za 5 min
 		}
 	}
-	else if (trimmedTime > playTimeInMinutes*60 + actualTimeAdded)
+	else if (trimmedTime > playTimeInMinutes * 60 + actualTimeAdded)
 	{ // jest koniec doliczonego czasu
 		if (isAutoPossShown === false)
 		{
@@ -537,74 +538,74 @@ function isOutsideStadium(position)
 
 function handleAddedTime() // onGameTick
 { // doliczony czas
-    let ballPosition = room.getBallPosition();
-    if (isOutsideStadium(ballPosition))
-    {
-        timeOutside++; // w okresach (1/60s)
-        return true;
-    }
+	let ballPosition = room.getBallPosition();
+	if (isOutsideStadium(ballPosition))
+	{
+		timeOutside++; // w okresach (1/60s)
+		return true;
+	}
 }
 
 let isBallOutsideStadium = false;
 function reactToOuts() // onGameTick
 { // informuje o autach, rożnych itd.
-    let ballPosition = room.getBallPosition();
-    if (isOutsideStadium(ballPosition))
+	let ballPosition = room.getBallPosition();
+	if (isOutsideStadium(ballPosition))
 	{ // jeżeli piłka jest poza boiskiem
-        if (!isBallOutsideStadium)
+		if (!isBallOutsideStadium)
 		{ // jeżeli piłka nie była poza boiskiem
-            isBallOutsideStadium = true; // piłka była poza poiskiem
-            exitingXPos = ballPosition.x;
-            let totalScores = room.getScores().red + room.getScores().blue;
-            if (lastScores != totalScores)
+			isBallOutsideStadium = true; // piłka była poza poiskiem
+			exitingXPos = ballPosition.x;
+			let totalScores = room.getScores().red + room.getScores().blue;
+			if (lastScores != totalScores)
 			{ // jeżeli padła bramka, to nie wyświetlamy CK i GK
-                lastScores = totalScores;
-                return false;
-            }
-            if (isOutsideRightBound(ballPosition) && lastTeamTouched == Team.RED)
+				lastScores = totalScores;
+				return false;
+			}
+			if (isOutsideRightBound(ballPosition) && lastTeamTouched == Team.RED)
 			{ // czerwony wywala za linię bramkową niebieskich
-                lastCall = 'GK';
+				lastCall = 'GK';
 				sendLocalizedAnnouncement([locStr.GK, ' ', blueTeamName], null, 0xFFFF00, 'normal', 1);
-            }
+			}
 			else if (isOutsideLeftBound(ballPosition) && lastTeamTouched == Team.BLUE)
 			{ // niebieski wywala za linię bramkową czerwonych
-                lastCall = 'GK';
+				lastCall = 'GK';
 				sendLocalizedAnnouncement([locStr.GK, ' ', redTeamName], null, 0xFFFF00, 'normal', 1);
-            }
-            else if (isOutsideRightBound(ballPosition) && lastTeamTouched == Team.BLUE)
+			}
+			else if (isOutsideRightBound(ballPosition) && lastTeamTouched == Team.BLUE)
 			{ // niebieski wywala za linię bramkową niebieskich
 				sendLocalizedAnnouncement([locStr.CK, ' ', redTeamName], null, 0xFFFF00, 'normal', 1);
-                lastCall = 'CK';
-            }
+				lastCall = 'CK';
+			}
 			else if (isOutsideLeftBound(ballPosition) && lastTeamTouched == Team.RED)
 			{ // czerwony wywala za linię bramkową czerwonych
 				sendLocalizedAnnouncement([locStr.CK, ' ', blueTeamName], null, 0xFFFF00, 'normal', 1);
-                lastCall = 'CK';
-            }
-            else
+				lastCall = 'CK';
+			}
+			else
 			{ // Auty
-                isBallKickedOutside = false; // oczekiwanie na wykopanie
+				isBallKickedOutside = false; // oczekiwanie na wykopanie
 				if (lastTeamTouched == Team.RED)
 					sendLocalizedAnnouncement([locStr.OUT, ' ', blueTeamName], null, 0xFFFF00, 'normal', 1);
 				else
 					sendLocalizedAnnouncement([locStr.OUT, ' ', redTeamName], null, 0xFFFF00, 'normal', 1);
-                lastCall = lastTeamTouched == Team.RED ? '2' : '1';
-            }
-        }
-    }
-    else
+				lastCall = lastTeamTouched == Team.RED ? '2' : '1';
+			}
+		}
+	}
+	else
 	{
-        isBallOutsideStadium = false; // piłka nie jest całkowicie poza boiskiem
-        backFurtherMsgCanBeShown = true; // gotowość do pokazania do przodu/do tyłu
-    }
-    return true;
+		isBallOutsideStadium = false; // piłka nie jest całkowicie poza boiskiem
+		backFurtherMsgCanBeShown = true; // gotowość do pokazania do przodu/do tyłu
+	}
+	return true;
 }
 
 function getDistanceBetweenPoints(point1, point2)
 {
-    let distance1 = point1.x - point2.x;
-    let distance2 = point1.y - point2.y;
-    return Math.sqrt(distance1 * distance1 + distance2 * distance2);
+	let distance1 = point1.x - point2.x;
+	let distance2 = point1.y - point2.y;
+	return Math.sqrt(distance1 * distance1 + distance2 * distance2);
 }
 
 function isTouchingBall(player)
@@ -617,33 +618,33 @@ function isTouchingBall(player)
 
 function getLastTouchTheBall() // onGameTick
 { // dotknięcia piłki
-    for (let i = 0; i < population; i++)
+	for (let i = 0; i < population; i++)
 	{ // dla każdego gracza
-        if (players[i].position != null)
+		if (players[i].position != null)
 		{ // jeżeli gracz w grze
-            if (isTouchingBall(players[i]))
+			if (isTouchingBall(players[i]))
 			{ // jeżeli gracz dotyka piłkę
-                if (lastPlayerTouched != null && lastPlayerTouched.id != players[i].id)
-                { // jeżeli gracz nie dotknął wcześniej piłki
-                    if (lastTeamTouched == players[i].team) // jeżeli ostatnia drużyna to drużyna gracza
-                        assistingPlayer = lastPlayerTouched;
+				if (lastPlayerTouched != null && lastPlayerTouched.id != players[i].id)
+				{ // jeżeli gracz nie dotknął wcześniej piłki
+					if (lastTeamTouched == players[i].team) // jeżeli ostatnia drużyna to drużyna gracza
+						assistingPlayer = lastPlayerTouched;
 					else
 						assistingPlayer = null; // przeciwnik nie asystuje
-                }
-                lastTeamTouched = players[i].team; // dotknięcie przez drużynę
-                previousPlayerTouched = lastPlayerTouched;
-                lastPlayerTouched = players[i];
-            }
-        }
-    }
-    return lastPlayerTouched;
+				}
+				lastTeamTouched = players[i].team; // dotknięcie przez drużynę
+				previousPlayerTouched = lastPlayerTouched;
+				lastPlayerTouched = players[i];
+			}
+		}
+	}
+	return lastPlayerTouched;
 }
 
 let playersNotInLine = new Array;
 function getPlayersNotWithinLine() // onPlayerBallKick
 {
-    console.log('getPlayersNotWithinLine');
-    playersNotInLine = new Array; // tablica graczy przekraczających linię
+	console.log('getPlayersNotWithinLine');
+	playersNotInLine = new Array; // tablica graczy przekraczających linię
 	for (let i = 0; i < population; i++)
 	{ // dla każdego gracza
 		if (players[i].position != null)
@@ -663,9 +664,9 @@ function getPlayersNotWithinLine() // onPlayerBallKick
 
 function printPlayersLine() // isThrowInCorrect
 { // wypisywanie przekraczających
-    console.log('printPlayersLine');
-    for (let i = 0; i < playersNotInLine.length; i++)
-    {
+	console.log('printPlayersLine');
+	for (let i = 0; i < playersNotInLine.length; i++)
+	{
 		let found = false;
 		for (let j = 0; j < lineCrossedPlayers.length; j++)
 		{
@@ -679,33 +680,33 @@ function printPlayersLine() // isThrowInCorrect
 		if (!found)
 		{
 			lineCrossedPlayers.push(
-			{
-				name: playersNotInLine[i],
-				times: 1,
-				punished: false
-			});
+				{
+					name: playersNotInLine[i],
+					times: 1,
+					punished: false
+				});
 			sendLocalizedAnnouncement([locStr.LINE, ' ', playersNotInLine[i], ' {1}'], null, 0xFFCC00, 'small', 1);
 		}
-    }
+	}
 }
 
 let isBackFurtherNeeded = false;
 let wrongThrowPosition = false;
 function isBackRequired()
 {
-    let ballPosition = room.getBallPosition();
-    if (!isBallKickedOutside)
-    { // jeżeli piłki nie wykopano z autu
-		if (lastCall=='1')
+	let ballPosition = room.getBallPosition();
+	if (!isBallKickedOutside)
+	{ // jeżeli piłki nie wykopano z autu
+		if (lastCall == '1')
 		{ // R
-			if ((ballPosition.x - exitingXPos > throwInLeeway) && backFurtherMsgCanBeShown==true && isOutsideStadium(ballPosition) && ((ballPosition.y - outLineY > 20) || (ballPosition.y - outLineY < -20)))
+			if ((ballPosition.x - exitingXPos > throwInLeeway) && backFurtherMsgCanBeShown == true && isOutsideStadium(ballPosition) && ((ballPosition.y - outLineY > 20) || (ballPosition.y - outLineY < -20)))
 			{
 				backFurtherMsgCanBeShown = false;
 				sendLocalizedAnnouncement(['<—— ', locStr.BACK], null, 0xFFFF00, 'normal', 1);
 				isBackFurtherNeeded = true;
 				wrongThrowPosition = true;
 			}
-			if ((ballPosition.x - exitingXPos < -throwInLeeway) && backFurtherMsgCanBeShown==true && isOutsideStadium(ballPosition) && ((ballPosition.y - outLineY > 20) || (ballPosition.y - outLineY < -20)))
+			if ((ballPosition.x - exitingXPos < -throwInLeeway) && backFurtherMsgCanBeShown == true && isOutsideStadium(ballPosition) && ((ballPosition.y - outLineY > 20) || (ballPosition.y - outLineY < -20)))
 			{
 				backFurtherMsgCanBeShown = false;
 				sendLocalizedAnnouncement([locStr.FURTHER, ' ——>'], null, 0xFFFF00, 'normal', 1);
@@ -713,16 +714,16 @@ function isBackRequired()
 				wrongThrowPosition = true;
 			}
 		}
-		if (lastCall=='2')
+		if (lastCall == '2')
 		{ // B
-			if ((ballPosition.x - exitingXPos > throwInLeeway) && backFurtherMsgCanBeShown==true && isOutsideStadium(ballPosition) && ((ballPosition.y - outLineY > 20) || (ballPosition.y - outLineY < -20)))
+			if ((ballPosition.x - exitingXPos > throwInLeeway) && backFurtherMsgCanBeShown == true && isOutsideStadium(ballPosition) && ((ballPosition.y - outLineY > 20) || (ballPosition.y - outLineY < -20)))
 			{
 				backFurtherMsgCanBeShown = false;
 				sendLocalizedAnnouncement(['<—— ', locStr.FURTHER], null, 0xFFFF00, 'normal', 1);
 				isBackFurtherNeeded = true;
 				wrongThrowPosition = true;
 			}
-			if ((ballPosition.x - exitingXPos < -throwInLeeway) && backFurtherMsgCanBeShown==true && isOutsideStadium(ballPosition) && ((ballPosition.y - outLineY > 20) || (ballPosition.y - outLineY < -20)))
+			if ((ballPosition.x - exitingXPos < -throwInLeeway) && backFurtherMsgCanBeShown == true && isOutsideStadium(ballPosition) && ((ballPosition.y - outLineY > 20) || (ballPosition.y - outLineY < -20)))
 			{
 				backFurtherMsgCanBeShown = false;
 				sendLocalizedAnnouncement([locStr.BACK, ' ——>'], null, 0xFFFF00, 'normal', 1);
@@ -730,79 +731,79 @@ function isBackRequired()
 				wrongThrowPosition = true;
 			}
 		}
-    }
-    if (lastCall=='2' && isBackFurtherNeeded && isOutsideStadium && Math.abs(exitingXPos - ballPosition.x) < throwInLeeway-20)
-    {
-        sendLocalizedAnnouncement([locStr.OK], null, 0xFFFF00, 'normal', 1);
-        isBackFurtherNeeded = false;
-        wrongThrowPosition = false;
-        backFurtherMsgCanBeShown = true;
-    }
-    if (lastCall=='1' && isBackFurtherNeeded && isOutsideStadium && Math.abs(exitingXPos - ballPosition.x) < throwInLeeway-20)
-    {
-        sendLocalizedAnnouncement([locStr.OK], null, 0xFFFF00, 'normal', 1);
-        isBackFurtherNeeded = false;
-        wrongThrowPosition = false;
-        backFurtherMsgCanBeShown = true;
-    }
+	}
+	if (lastCall == '2' && isBackFurtherNeeded && isOutsideStadium && Math.abs(exitingXPos - ballPosition.x) < throwInLeeway - 20)
+	{
+		sendLocalizedAnnouncement([locStr.OK], null, 0xFFFF00, 'normal', 1);
+		isBackFurtherNeeded = false;
+		wrongThrowPosition = false;
+		backFurtherMsgCanBeShown = true;
+	}
+	if (lastCall == '1' && isBackFurtherNeeded && isOutsideStadium && Math.abs(exitingXPos - ballPosition.x) < throwInLeeway - 20)
+	{
+		sendLocalizedAnnouncement([locStr.OK], null, 0xFFFF00, 'normal', 1);
+		isBackFurtherNeeded = false;
+		wrongThrowPosition = false;
+		backFurtherMsgCanBeShown = true;
+	}
 }
 
 function isThrowInCorrect() // onGameTick
 {
-    let ballPosition = room.getBallPosition();
-    let isCrossing = isBallCrossingTheLine();
-    let LTTstring = lastTeamTouched.toString();
-
-    if (isCrossing && !isBallKickedOutside && LTTstring==lastCall && (lastCall=='1' || lastCall=='2'))
-    {
-        if (lastCall=='2')
-        {
-            sendLocalizedAnnouncement([locStr.OUT, ' ', redTeamName, ' ', locStr.BAD_THROW_IN], null, 0xFFFF00, 'small', 1);
-        }
-        if (lastCall=='1')
-        {
-            sendLocalizedAnnouncement([locStr.OUT, ' ', blueTeamName, ' ', locStr.BAD_THROW_IN], null, 0xFFFF00, 'small', 1);
-        }
-
-        isBallKickedOutside == false;
-    }
-	else if (isCrossing && LTTstring != lastCall && (lastCall=='1' || lastCall=='2'))
-    {
-        sendLocalizedAnnouncement([locStr.WRONG_TEAM], null, 0xFFFF00, 'small', 1);
-        wrongThrowPosition = false;
-        isBackFurtherNeeded = false;
-    }
-	else if (isCrossing && wrongThrowPosition && LTTstring==lastCall && (lastCall=='1' || lastCall=='2'))
-    {
-        sendLocalizedAnnouncement([locStr.WRONG_PLACE], null, 0xFFFF00, 'small', 1);
-        wrongThrowPosition = false;
-        isBackFurtherNeeded = false;
-    }
+	let ballPosition = room.getBallPosition();
+	let isCrossing = isBallCrossingTheLine();
+	let LTTstring = lastTeamTouched.toString();
+	
+	if (isCrossing && !isBallKickedOutside && LTTstring == lastCall && (lastCall == '1' || lastCall == '2'))
+	{
+		if (lastCall == '2')
+		{
+			sendLocalizedAnnouncement([locStr.OUT, ' ', redTeamName, ' ', locStr.BAD_THROW_IN], null, 0xFFFF00, 'small', 1);
+		}
+		if (lastCall == '1')
+		{
+			sendLocalizedAnnouncement([locStr.OUT, ' ', blueTeamName, ' ', locStr.BAD_THROW_IN], null, 0xFFFF00, 'small', 1);
+		}
+		
+		isBallKickedOutside == false;
+	}
+	else if (isCrossing && LTTstring != lastCall && (lastCall == '1' || lastCall == '2'))
+	{
+		sendLocalizedAnnouncement([locStr.WRONG_TEAM], null, 0xFFFF00, 'small', 1);
+		wrongThrowPosition = false;
+		isBackFurtherNeeded = false;
+	}
+	else if (isCrossing && wrongThrowPosition && LTTstring == lastCall && (lastCall == '1' || lastCall == '2'))
+	{
+		sendLocalizedAnnouncement([locStr.WRONG_PLACE], null, 0xFFFF00, 'small', 1);
+		wrongThrowPosition = false;
+		isBackFurtherNeeded = false;
+	}
 	else if (isCrossing)
-    {
-        printPlayersLine();
-    }
+	{
+		printPlayersLine();
+	}
 }
 
 function isBallCrossingTheLine()
 { // sprawdza, czy piłka przekracza linię boczną
-    previousBallYPosition = ballYPosition;
-    ballYPosition = room.getBallPosition().y;
-    crossed = (ballYPosition < stadiumHeight && previousBallYPosition > stadiumHeight) || (ballYPosition > -stadiumHeight && previousBallYPosition < -stadiumHeight);
-    return crossed;
+	previousBallYPosition = ballYPosition;
+	ballYPosition = room.getBallPosition().y;
+	crossed = (ballYPosition < stadiumHeight && previousBallYPosition > stadiumHeight) || (ballYPosition > -stadiumHeight && previousBallYPosition < -stadiumHeight);
+	return crossed;
 }
 
 function hasBallLeftTheLine() // ???
 {
-    let ballPosition = room.getBallPosition();
-    if (ballPosition.y < outLineY && isBallKickedOutside)
-    {
-    }
+	let ballPosition = room.getBallPosition();
+	if (ballPosition.y < outLineY && isBallKickedOutside)
+	{
+	}
 	else if (ballPosition.y > outLineY && isBallKickedOutside && lastPlayerTouched.id == previousPlayerTouched.id)
-    {
-        //sendLocalizedAnnouncement(['kruwa co robiła ta funkcja'], null, 0xFFFF00, 'normal', 1);
+	{
+		//sendLocalizedAnnouncement(['kruwa co robiła ta funkcja'], null, 0xFFFF00, 'normal', 1);
 		console.log('hasBallLeftTheLine (kruwa)');
-    }
+	}
 }
 
 /*
@@ -810,11 +811,11 @@ function hasBallLeftTheLine() // ???
 */
 let commands =
 { // komendy nie rozróżniają wielkości liter, jeśli któraś zostanie wykryta, jest zamieniana na WIELKIE LITERY
-    // Proste
+	// Proste
 	'!POSS': possFun,
 	'!WHOSCORED': printScorers,
 	
-    // Gracz
+	// Gracz
 	'!PL': plFun,
 	'!EN': enFun,
 	'!DEOP': unAdminFun,
@@ -826,17 +827,17 @@ let commands =
 	'!GETDISCCOUNT': getDiscCountFun,
 	
 	// Gracz i argumenty
-    '!OP': adminFun, // KOMENDA DO UZYSKANIA ADMINA
+	'!OP': adminFun, // KOMENDA DO UZYSKANIA ADMINA
 	'!GETDISC': getDiscFun,
 	'!GETPLAYER': getPlayerFun,
-
-    // Admin
+	
+	// Admin
 	'!CB': clearBansFun,
 	'!AUTOPOSS': AutoPossSwitchFun,
 	'!DROPPEDBALL': droppedBallFun,
 	'!RZUTSĘDZIOWSKI': droppedBallFun,
 	'!REF': refFun,
-
+	
 	// Admin i argumenty
 	'!TRED': teamRedNameFun,
 	'!TBLUE': teamBlueNameFun,
@@ -854,7 +855,7 @@ function possFun()
 { // !poss
 	if (redPossessionTicks + bluePossessionTicks == 0) // Trzeba pamiętać o dziedzinie
 		return false;
-	let redPossessionPercentage = Math.round(redPossessionTicks / (redPossessionTicks+bluePossessionTicks) * 100);
+	let redPossessionPercentage = Math.round(redPossessionTicks / (redPossessionTicks + bluePossessionTicks) * 100);
 	let bluePossessionPercentage = 100 - redPossessionPercentage;
 	if (room.getScores() != null) // mecz trwa
 		sendLocalizedAnnouncement([locStr.BALL_POSS, ': ', redTeamName, ' ', redPossessionPercentage, ' % ', bluePossessionPercentage, ' ', blueTeamName], null, 0xCCFF00, 'normal', 1);
@@ -887,9 +888,9 @@ function enFun(player)
 
 function unAdminFun(player)
 { // !deop
-    // Rezygnacja
-    room.setPlayerAdmin(player.id, false);
-    return false; // Wiadomość nie będzie wyświetlona
+	// Rezygnacja
+	room.setPlayerAdmin(player.id, false);
+	return false; // Wiadomość nie będzie wyświetlona
 }
 
 function pauseFun(player)
@@ -924,10 +925,10 @@ function getDiscCountFun(player)
 // Gracz i argumenty
 function adminFun(player, arg)
 { // !op <hasło>
-    // Daje wpisującemu admina
+	// Daje wpisującemu admina
 	if (arg === adminPassword)
 		room.setPlayerAdmin(player.id, true);
-    return false;
+	return false;
 }
 
 function getDiscFun(player, arg)
@@ -947,7 +948,7 @@ function getPlayerFun(player, arg)
 // Admin
 function clearBansFun(player)
 { // !cb
-    if (player.admin === true)
+	if (player.admin === true)
 	{
 		room.clearBans();
 		sendLocalizedAnnouncement(['✔', locStr.BANS_CLEARED], null, 0x00FF00, 'normal', 1);
@@ -1032,7 +1033,7 @@ function loadFun(player, arg)
 		if (maps[arg] != undefined)
 			room.setCustomStadium(maps[arg]);
 		else
-			sendLocalizedAnnouncement(['⛔', locStr.NO_MAP ,': ', arg, '. ', locStr.TYPO_POSSIBLE], player.id, 0xFFCC00, 'normal', 1);
+			sendLocalizedAnnouncement(['⛔', locStr.NO_MAP, ': ', arg, '. ', locStr.TYPO_POSSIBLE], player.id, 0xFFCC00, 'normal', 1);
 	}
 	else
 		sendLocalizedAnnouncement(['⛔', locStr.NOT_ALLOWED], player.id, 0xFF3300, 'normal', 1);
@@ -1063,7 +1064,7 @@ function setDiscFun(player, arg)
 		{
 			ktory = parseInt(arg.substr(0, spacePos)); // |0| x 0
 			
-			let arg2 = arg.substr(spacePos+1, arg.length); // 0 |x 0|
+			let arg2 = arg.substr(spacePos + 1, arg.length); // 0 |x 0|
 			let spacePos2 = arg2.search(' ');
 			if (spacePos2 > -1)
 			{
@@ -1104,7 +1105,7 @@ function setPlayerFun(player, arg)
 		{
 			id = parseInt(arg.substr(0, spacePos));
 			
-			let arg2 = arg.substr(spacePos+1, arg.length);
+			let arg2 = arg.substr(spacePos + 1, arg.length);
 			let spacePos2 = arg2.search(' ');
 			if (spacePos2 > -1)
 			{
@@ -1140,7 +1141,7 @@ function setBallFun(player, arg)
 
 function setStableBallColorFun(player, arg)
 { // !ballcolor 0xffffff - koloruje piłkę na kolor 0xffffff (biały) na stałe
-  // !ballcolor - czyni piłkę przezroczystą i umożliwia zresetowanie koloru po bramce lub nowej grze	
+	// !ballcolor - czyni piłkę przezroczystą i umożliwia zresetowanie koloru po bramce lub nowej grze
 	if (player.admin === true)
 	{
 		ballColor = parseInt(arg);
@@ -1164,7 +1165,7 @@ function setStableBallColorFun(player, arg)
 */
 room.onPlayerJoin = function(player)
 {
-    console.log('%c' + player.name + '#' + player.id + ' wchodzi', 'color: green');
+	console.log('%c' + player.name + '#' + player.id + ' wchodzi', 'color: green');
 	updatePlayerList();
 	initBijacze(player);
 	setPlayerLanguage(player, 'pl');
@@ -1180,7 +1181,7 @@ room.onPlayerLeave = function(player)
 let tickCount = 0;
 room.onGameTick = function()
 {
-    updatePlayerList();
+	updatePlayerList();
 	reactToBallRadiusChange();
 	if (isRSEnabled)
 	{ // kiedy sędzia odzywa się
@@ -1190,9 +1191,9 @@ room.onGameTick = function()
 		hasBallLeftTheLine(); // ???
 		displayAddedTime(); // wyśw. dolicz. czasu
 	}
-    getLastTouchTheBall(); // kto strzelił/asystował
+	getLastTouchTheBall(); // kto strzelił/asystował
 	handleAddedTime(); // ile doliczyć
-    
+	
 	if (isAutoPossEnabled)
 		displayPossAutomatically(); // posiadanie co 5 min
 	
@@ -1201,8 +1202,8 @@ room.onGameTick = function()
 		redPossessionTicks++;
 	else if (lastTeamTouched == Team.BLUE)
 		bluePossessionTicks++;
-
-    tickCount++;
+	
+	tickCount++;
 }
 
 room.onPlayerKicked = function(kickedPlayer, reason, ban, byPlayer)
@@ -1213,7 +1214,7 @@ room.onPlayerKicked = function(kickedPlayer, reason, ban, byPlayer)
 			console.log('%c' + kickedPlayer.name + '#' + kickedPlayer.id + ' ZBANOWANY (' + reason + ')', 'color: salmon');
 		else
 			console.log('%c' + kickedPlayer.name + '#' + kickedPlayer.id + ' ZBANOWANY przez: '
-			+ byPlayer.name + '#' + byPlayer.id + ' (' + reason + ')', 'color: salmon');
+				+ byPlayer.name + '#' + byPlayer.id + ' (' + reason + ')', 'color: salmon');
 		// Banowanie nie samego siebie i nie przez sędziego
 		if (byPlayer.id !== kickedPlayer.id && byPlayer.id !== 0 && byPlayer != null)
 		{
@@ -1228,7 +1229,7 @@ room.onPlayerKicked = function(kickedPlayer, reason, ban, byPlayer)
 			console.log('%c' + kickedPlayer.name + '#' + kickedPlayer.id + ' wykopany (' + reason + ')', 'color: salmon');
 		else
 			console.log('%c' + kickedPlayer.name + '#' + kickedPlayer.id + ' wykopany przez: '
-			+ byPlayer.name + '#' + byPlayer.id + ' (' + reason + ')', 'color: salmon');
+				+ byPlayer.name + '#' + byPlayer.id + ' (' + reason + ')', 'color: salmon');
 	}
 }
 
@@ -1242,7 +1243,7 @@ room.onPlayerAdminChange = function(changedPlayer, byPlayer)
 			console.log('%c' + changedPlayer.name + '#' + changedPlayer.id + ' uzyskuje admina', 'color: olive');
 		else
 			console.log('%c' + changedPlayer.name + '#' + changedPlayer.id + ' uzyskuje admina od: '
-			+ byPlayer.name + '#' + byPlayer.id, 'color: olive');
+				+ byPlayer.name + '#' + byPlayer.id, 'color: olive');
 	}
 	else
 	{
@@ -1250,13 +1251,13 @@ room.onPlayerAdminChange = function(changedPlayer, byPlayer)
 			console.log('%c' + changedPlayer.name + '#' + changedPlayer.id + ' TRACI admina', 'color: olive');
 		else
 			console.log('%c' + changedPlayer.name + '#' + changedPlayer.id + ' TRACI admina przez: '
-			+ byPlayer.name + '#' + byPlayer.id, 'color: olive');
+				+ byPlayer.name + '#' + byPlayer.id, 'color: olive');
 	}
 }
 
 room.onGameStart = function(byPlayer)
 {
-    if (byPlayer == null)
+	if (byPlayer == null)
 		console.log('%c' + 'Gra rozpoczęta', 'color: royalblue');
 	else
 		console.log('%c' + 'Gra rozpoczęta przez: ' + byPlayer.name + '#' + byPlayer.id, 'color: royalblue');
@@ -1264,11 +1265,11 @@ room.onGameStart = function(byPlayer)
 	reactToBallRadiusChange();
 	lastTeamTouched = 0;
 	lineCrossedPlayers = [{name: 'temp', times: 0}];
-    lastScores = room.getScores().red + room.getScores().blue;
-    timeOutside = 0;
-    isTimeAddedShown = false;
+	lastScores = room.getScores().red + room.getScores().blue;
+	timeOutside = 0;
+	isTimeAddedShown = false;
 	isAutoPossShown = false;
-    ballYPosition = 0;
+	ballYPosition = 0;
 	redPossessionTicks = 0;
 	bluePossessionTicks = 0;
 	
@@ -1296,7 +1297,7 @@ room.onGameStop = function(byPlayer)
 
 room.onGamePause = function(byPlayer)
 {
-    if (byPlayer == null)
+	if (byPlayer == null)
 		console.log('%c' + '⏸Gra zatrzymana', 'color: royalblue');
 	else
 		console.log('%c' + '⏸Gra zatrzywana przez: ' + byPlayer.name + '#' + byPlayer.id, 'color: royalblue');
@@ -1305,7 +1306,7 @@ room.onGamePause = function(byPlayer)
 
 room.onGameUnpause = function(byPlayer)
 {
-    if (byPlayer == null)
+	if (byPlayer == null)
 		console.log('%c' + '⏯Gra wznowiona', 'color: royalblue');
 	else
 		console.log('%c' + '⏯Gra wznowiona przez: ' + byPlayer.name + '#' + byPlayer.id, 'color: royalblue');
@@ -1315,32 +1316,32 @@ room.onGameUnpause = function(byPlayer)
 // Zmiana drużyny
 room.onPlayerTeamChange = function(changedPlayer, byPlayer)
 {
-    if (byPlayer == null)
+	if (byPlayer == null)
 		console.log('%c' + changedPlayer.name + '#' + changedPlayer.id + ' zmienia stronę', 'color: grey');
 	else
 		console.log('%c' + changedPlayer.name + '#' + changedPlayer.id + ' zmienia stronę przez: '
-		+ byPlayer.name + '#' + byPlayer.id, 'color: grey');
+			+ byPlayer.name + '#' + byPlayer.id, 'color: grey');
 }
 
 room.onPlayerBallKick = function(byPlayer)
 { // KOPNIĘCIE PIŁKI
-    let ballPosition = room.getBallPosition();
-    if (lastPlayerTouched != null && byPlayer.id != lastPlayerTouched.id)
-    { // jeżeli ostatni gracz istnieje i gracz nie jest ostatnim graczem (nie asystuje samemu sobie)
-        if (lastTeamTouched == byPlayer.team) // jeżeli ostatnia drużyna to drużyna gracza
-            assistingPlayer = lastPlayerTouched;
+	let ballPosition = room.getBallPosition();
+	if (lastPlayerTouched != null && byPlayer.id != lastPlayerTouched.id)
+	{ // jeżeli ostatni gracz istnieje i gracz nie jest ostatnim graczem (nie asystuje samemu sobie)
+		if (lastTeamTouched == byPlayer.team) // jeżeli ostatnia drużyna to drużyna gracza
+			assistingPlayer = lastPlayerTouched;
 		else assistingPlayer = null; // przeciwnik nie asystuje
-    }
-    previousPlayerTouched = lastPlayerTouched;
-    lastPlayerTouched = byPlayer;
-    lastTeamTouched = byPlayer.team;
-
-    if (isBallOutsideStadium)
-        getPlayersNotWithinLine();
-    if (isBallOutsideStadium && ballPosition.y < 0)
-        isBallKickedOutside = true;
+	}
+	previousPlayerTouched = lastPlayerTouched;
+	lastPlayerTouched = byPlayer;
+	lastTeamTouched = byPlayer.team;
+	
+	if (isBallOutsideStadium)
+		getPlayersNotWithinLine();
+	if (isBallOutsideStadium && ballPosition.y < 0)
+		isBallKickedOutside = true;
 	else if (isBallOutsideStadium && ballPosition.y > 0)
-        isBallKickedOutside = true;
+		isBallKickedOutside = true;
 	else isBallKickedOutside = false;
 }
 
@@ -1350,10 +1351,10 @@ let isOwnGoal = (team, player) => team !== player.team ? locStr.OG : '';
 let leadingZero = s => s < 10 ? '0' + s : s;
 room.onTeamGoal = function(team)
 { // Kto i kiedy strzelił
-    let time = room.getScores().time;
-    let m = Math.trunc(time / 60);
+	let time = room.getScores().time;
+	let m = Math.trunc(time / 60);
 	let s = Math.trunc(time % 60);
-    time = m + ':' + leadingZero(s); // mm:ss
+	time = m + ':' + leadingZero(s); // mm:ss
 	
 	if (lastPlayerTouched != null)
 	{
@@ -1366,9 +1367,9 @@ room.onTeamGoal = function(team)
 		}
 		
 		sendLocalizedAnnouncement(['⚽', teamIcon(team), ' ', time, ' ', lastPlayerTouched.name,
-		assist, ownGoal], null, 0xFFFF00, 'normal', 1);
+			assist, ownGoal], null, 0xFFFF00, 'normal', 1);
 		
-		whoScoredList.push(teamIcon(team) + ' ' + time + ' ' + lastPlayerTouched.name + assist + (ownGoal!=''?ownGoal.pl:''));
+		whoScoredList.push(teamIcon(team) + ' ' + time + ' ' + lastPlayerTouched.name + assist + (ownGoal != '' ? ownGoal.pl : ''));
 	}
 	else
 	{
@@ -1399,9 +1400,9 @@ room.onPlayerActivity = function(player)
 }
 
 room.onPlayerChat = function(player, message)
-{	
+{
 	console.log(player.name + '#' + player.id + ': ' + message);
-
+	
 	let spacePos = message.search(' ');
 	// Komenda do spacji - !k 0 - Argument po spacji
 	//                     ^^ ^
@@ -1415,7 +1416,7 @@ room.onPlayerChat = function(player, message)
 
 room.onStadiumChange = function(newStadiumName, byPlayer)
 {
-    if (byPlayer == null)
+	if (byPlayer == null)
 		console.log('%c' + '🌐Stadion zmieniony na: ' + newStadiumName, 'color: fuchsia');
 	else
 		console.log('%c' + '🌐Stadion zmieniony na: ' + newStadiumName + ' przez: ' + byPlayer.name, 'color: fuchsia');
