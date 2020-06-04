@@ -1426,3 +1426,14 @@ room.onRoomLink = function(url)
 {
 	console.log('Url: ' + url);
 }
+
+window.onbeforeunload = e =>
+{ // zabezpieczenie przed przypadkowym zamknięciem
+	e = e || window.event;
+	// Dla IE i Firefox przed wersją 4
+	if (e)
+		e.returnValue = 'Sure?';
+	return 'Sure?'; // dla Safari
+};
+
+console.clear();
